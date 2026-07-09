@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Soporte Legal - Solicitud de Documentos</title>
     <style>
-        /* Estilos Básicos y Limpios */
         body {
             font-family: Arial, sans-serif;
             margin: 0;
@@ -13,8 +12,6 @@
             background-color: #f4f6f9;
             color: #333;
         }
-        
-        /* Banner / Hero */
         .banner {
             background: linear-gradient(135deg, #1e3a8a, #0f172a);
             color: white;
@@ -30,8 +27,6 @@
             font-size: 1.1rem;
             color: #cbd5e1;
         }
-
-        /* Contenedor del Formulario */
         .container {
             max-width: 600px;
             margin: 40px auto;
@@ -46,8 +41,6 @@
             border-bottom: 2px solid #e2e8f0;
             padding-bottom: 10px;
         }
-
-        /* Elementos del Formulario */
         .form-group {
             margin-bottom: 15px;
         }
@@ -55,7 +48,7 @@
             display: block;
             margin-bottom: 5px;
             font-weight: bold;
-            font-size: 0.9rem;
+            font-size: 1rem;
         }
         input[type="text"], input[type="email"], input[type="date"], select, textarea {
             width: 100%;
@@ -63,21 +56,19 @@
             box-sizing: border-box;
             border: 1px solid #cbd5e1;
             border-radius: 4px;
-            font-size: 1rem; /* Tamaño de letra estándar y legible (16px) */
+            font-size: 1rem;
             font-family: inherit;
             color: #333;
         }
         textarea {
             resize: vertical;
         }
-        
-        /* Botón de Envío */
         .btn-submit {
             background-color: #2563eb;
             color: white;
             border: none;
-            padding: 12px 20px;
-            font-size: 1rem;
+            padding: 14px 20px;
+            font-size: 1.1rem;
             font-weight: bold;
             border-radius: 4px;
             cursor: pointer;
@@ -87,8 +78,21 @@
         .btn-submit:hover {
             background-color: #1d4ed8;
         }
-
-        /* Footer */
+        .btn-submit:disabled {
+            background-color: #94a3b8;
+            cursor: not-allowed;
+        }
+        /* Mensajes de estado */
+        .mensaje {
+            padding: 12px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+            font-weight: bold;
+            display: none;
+        }
+        .exito { background-color: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+        .error { background-color: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+        
         footer {
             text-align: center;
             padding: 20px;
@@ -99,66 +103,116 @@
 </head>
 <body>
 
-    <!-- BANNER -->
     <header class="banner">
         <h1>Tu Soporte Legal Digital</h1>
         <p>Solicita la creación y estructuración de tus documentos legales y minutas.</p>
     </header>
 
-    <!-- ESPACIO DE LA SOLICITUD -->
     <main class="container">
         <h2>Nueva Solicitud de Documento</h2>
         
-        <form action="#" method="POST">
-            
-            <!-- Datos del Solicitante -->
+        <!-- Contenedores para alertas de éxito o error -->
+        <div id="msgExito" class="mensaje exito">¡Solicitud enviada con éxito! Su asistente legal la procesará pronto.</div>
+        <div id="msgError" class="mensaje error">Hubo un problema al enviar la solicitud. Intente nuevamente.</div>
+
+        <form id="formSolicitud">
             <div class="form-group">
                 <label for="nombre">Nombre Completo *</label>
-                <input type="text" id="nombre" name="nombre" required placeholder="Ej. Juan Pérez">
+                <input type="text" id="nombre" required placeholder="Ej. Juan Pérez">
             </div>
 
             <div class="form-group">
                 <label for="correo">Correo Electrónico *</label>
-                <input type="email" id="correo" name="correo" required placeholder="correo@ejemplo.com">
+                <input type="email" id="correo" required placeholder="correo@ejemplo.com">
             </div>
 
-            <!-- Detalles del Requerimiento -->
             <div class="form-group">
                 <label for="tipo">Tipo de Soporte Documental *</label>
-                <select id="tipo" name="tipo" required>
+                <select id="tipo" required>
                     <option value="" disabled selected>Selecciona una opción</option>
-                    <option value="contrato">Estructuración / Redacción de Contrato</option>
-                    <option value="minuta">Elaboración de Minutas y Poderes</option>
-                    <option value="corporativo">Documentación Corporativa / Actas</option>
-                    <option value="revision">Revisión y Auditoría de Documento</option>
+                    <option value="Contrato">Estructuración / Redacción de Contrato</option>
+                    <option value="Minuta">Elaboración de Minutas y Poderes</option>
+                    <option value="Corporativo">Documentación Corporativa / Actas</option>
+                    <option value="Revision">Revisión y Auditoría de Documento</option>
                 </select>
             </div>
 
             <div class="form-group">
                 <label for="fecha">Fecha Límite Requerida *</label>
-                <input type="date" id="fecha" name="fecha" required>
+                <input type="date" id="fecha" required>
             </div>
 
             <div class="form-group">
                 <label for="asunto">Asunto o Título del Documento *</label>
-                <input type="text" id="asunto" name="asunto" required placeholder="Ej. Contrato de Arrendamiento Comercial">
+                <input type="text" id="asunto" required placeholder="Ej. Contrato de Arrendamiento Comercial">
             </div>
 
             <div class="form-group">
                 <label for="detalles">Instrucciones y Datos Clave *</label>
-                <textarea id="detalles" name="detalles" rows="5" required placeholder="Describe las partes involucradas, condiciones especiales y el objetivo del documento..."></textarea>
+                <textarea id="detalles" rows="5" required placeholder="Describe las partes involucradas, condiciones específicas..."></textarea>
             </div>
 
-            <!-- Botón -->
-            <button type="submit" class="btn-submit">Enviar Requerimiento</button>
-
+            <button type="submit" id="btnEnviar" class="btn-submit">Enviar Requerimiento</button>
         </form>
     </main>
 
-    <!-- FOOTER -->
     <footer>
         <p>&copy; 2026 Tu Soporte Legal. Todos los derechos reservados.</p>
     </footer>
 
+    <!-- JAVASCRIPT PARA CONECTAR CON POWER AUTOMATE -->
+    <script>
+        // 1. REEMPLAZA ESTA URL POR LA QUE TE DA POWER AUTOMATE (Cuando uses el disparador HTTP)
+        const URL_POWER_AUTOMATE = "PASAR_AQUI_TU_URL_DE_POWER_AUTOMATE";
+
+        document.getElementById('formSolicitud').addEventListener('submit', async function(e) {
+            e.preventDefault(); // Evita que la página se recargue
+
+            const btn = document.getElementById('btnEnviar');
+            const msgExito = document.getElementById('msgExito');
+            const msgError = document.getElementById('msgError');
+
+            // Ocultar mensajes previos y deshabilitar botón
+            msgExito.style.display = 'none';
+            msgError.style.display = 'none';
+            btn.disabled = true;
+            btn.innerText = "Enviando...";
+
+            // Recolectar datos del formulario
+            const datosFormulario = {
+                nombre: document.getElementById('nombre').value,
+                correo: document.getElementById('correo').value,
+                tipo_soporte: document.getElementById('tipo').value,
+                fecha_limite: document.getElementById('fecha').value,
+                asunto: document.getElementById('asunto').value,
+                detalles: document.getElementById('detalles').value
+            };
+
+            try {
+                // Enviar la petición HTTP POST a Power Automate
+                const respuesta = await fetch(URL_POWER_AUTOMATE, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(datosFormulario)
+                });
+
+                if (respuesta.ok || respuesta.status === 202) {
+                    msgExito.style.display = 'block';
+                    document.getElementById('formSolicitud').reset(); // Limpia los campos
+                } else {
+                    throw new Error('Error en el servidor');
+                }
+            } catch (error) {
+                msgError.style.display = 'block';
+                console.error("Error al conectar con Power Automate:", error);
+            } finally {
+                // Restaurar el estado del botón
+                btn.disabled = false;
+                btn.innerText = "Enviar Requerimiento";
+            }
+        });
+    </script>
 </body>
 </html>
