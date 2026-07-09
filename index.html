@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Soporte Legal - Solicitud de Documentos</title>
+    <title>Soporte Legal - Generador de Derecho de Petición</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -11,189 +11,194 @@
             padding: 0;
             background-color: #f4f6f9;
             color: #333;
+            line-height: 1.5;
         }
         .banner {
             background: linear-gradient(135deg, #1e3a8a, #0f172a);
             color: white;
             text-align: center;
-            padding: 60px 20px;
+            padding: 50px 20px;
         }
-        .banner h1 {
-            margin: 0 0 10px 0;
-            font-size: 2.5rem;
-        }
-        .banner p {
-            margin: 0;
-            font-size: 1.1rem;
-            color: #cbd5e1;
-        }
-        .container {
-            max-width: 600px;
+        .banner h1 { margin: 0 0 10px 0; font-size: 2.3rem; }
+        .banner p { margin: 0; font-size: 1.1rem; color: #cbd5e1; }
+        
+        /* Layout de dos columnas */
+        .main-layout {
+            max-width: 1300px;
             margin: 40px auto;
-            padding: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 25px;
+            padding: 0 20px;
+        }
+        
+        /* Columna del Formulario Legal */
+        .column-form {
+            flex: 1.2;
+            min-width: 350px;
             background: white;
+            padding: 30px;
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
-        .container h2 {
-            margin-top: 0;
-            color: #1e3a8a;
-            border-bottom: 2px solid #e2e8f0;
-            padding-bottom: 10px;
-        }
-        .form-group {
-            margin-bottom: 15px;
-        }
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-            font-size: 1rem;
-        }
-        input[type="text"], input[type="email"], input[type="date"], select, textarea {
-            width: 100%;
-            padding: 12px;
-            box-sizing: border-box;
-            border: 1px solid #cbd5e1;
-            border-radius: 4px;
-            font-size: 1rem;
-            font-family: inherit;
-            color: #333;
-        }
-        textarea {
-            resize: vertical;
-        }
-        .btn-submit {
-            background-color: #2563eb;
-            color: white;
-            border: none;
-            padding: 14px 20px;
-            font-size: 1.1rem;
-            font-weight: bold;
-            border-radius: 4px;
-            cursor: pointer;
-            width: 100%;
-            transition: background 0.2s;
-        }
-        .btn-submit:hover {
-            background-color: #1d4ed8;
-        }
-        .btn-submit:disabled {
-            background-color: #94a3b8;
-            cursor: not-allowed;
-        }
-        .mensaje {
-            padding: 12px;
-            margin-bottom: 15px;
-            border-radius: 4px;
-            font-weight: bold;
-            display: none;
-        }
-        .exito { background-color: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
-        .error { background-color: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
         
-        footer {
-            text-align: center;
-            padding: 20px;
-            font-size: 0.85rem;
-            color: #64748b;
+        /* Columna de la Previsualización */
+        .column-preview {
+            flex: 1;
+            min-width: 350px;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            min-height: 600px;
         }
+        
+        h2 { margin-top: 0; color: #1e3a8a; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; font-size: 1.5rem; }
+        .form-group { margin-bottom: 18px; }
+        label { display: block; margin-bottom: 6px; font-weight: bold; color: #475569; font-size: 0.95rem; }
+        
+        input[type="text"], input[type="email"], select, textarea {
+            width: 100%; padding: 12px; box-sizing: border-box; border: 1px solid #cbd5e1;
+            border-radius: 4px; font-size: 1rem; font-family: inherit; color: #333;
+            background-color: #f8fafc;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none; border-color: #2563eb; background-color: #fff; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        
+        textarea { resize: vertical; }
+        
+        .btn-submit {
+            background-color: #2563eb; color: white; border: none; padding: 15px 20px;
+            font-size: 1.1rem; font-weight: bold; border-radius: 4px; cursor: pointer;
+            width: 100%; transition: background 0.2s; margin-top: 10px;
+        }
+        .btn-submit:hover { background-color: #1d4ed8; }
+        .btn-submit:disabled { background-color: #94a3b8; cursor: not-allowed; }
+        
+        /* Área del Visor de Documentos */
+        .preview-container {
+            flex: 1; border: 2px dashed #cbd5e1; border-radius: 6px; display: flex;
+            align-items: center; justify-content: center; background-color: #f8fafc;
+            overflow: hidden; position: relative; margin-top: 10px;
+        }
+        iframe { width: 100%; height: 100%; border: none; display: none; }
+        .placeholder-text { color: #64748b; text-align: center; padding: 30px; font-size: 1rem; }
+        
+        footer { text-align: center; padding: 30px; font-size: 0.85rem; color: #64748b; border-top: 1px solid #e2e8f0; margin-top: 40px; }
     </style>
 </head>
 <body>
 
     <header class="banner">
-        <h1>Tu Soporte Legal Digital</h1>
-        <p>Solicita la creación y estructuración de tus documentos legales y minutas.</p>
+        <h1>Estructurador de Derecho de Petición</h1>
+        <p>Genere formalmente su documento técnico-legal y visualice el borrador en tiempo real.</p>
     </header>
 
-    <main class="container">
-        <h2>Nueva Solicitud de Documento</h2>
+    <div class="main-layout">
         
-        <div id="msgExito" class="mensaje exito">¡Solicitud registrada con éxito en Google Sheets!</div>
-        <div id="msgError" class="mensaje error">Hubo un problema al procesar la solicitud. Intente nuevamente.</div>
+        <main class="column-form">
+            <h2>Estructura del Documento</h2>
+            <form id="formSolicitud">
+                
+                <div class="form-group">
+                    <label for="ciudad">Ciudad y Fecha *</label>
+                    <input type="text" id="ciudad" name="fecha_limite" required placeholder="Ej. Bogotá D.C., 8 de julio de 2026">
+                </div>
 
-        <form id="formSolicitud">
-            
-            <div class="form-group">
-                <label for="nombre">Nombre Completo *</label>
-                <input type="text" id="nombre" name="nombre" required placeholder="Ej. Juan Pérez">
+                <div class="form-group">
+                    <label for="autoridad">Entidad o Persona a quien se dirige (Destinatario) *</label>
+                    <input type="text" id="autoridad" name="asunto" required placeholder="Ej. Superintendencia de Industria y Comercio / Empresa X S.A.">
+                </div>
+
+                <div class="form-group">
+                    <label for="nombre">Nombre Completo del Peticionario *</label>
+                    <input type="text" id="nombre" name="nombre" required placeholder="Ej. Carlos Alberto Mendoza">
+                </div>
+
+                <div class="form-group">
+                    <label for="identificacion">Documento de Identidad y Número *</label>
+                    <input type="text" id="identificacion" name="tipo_soporte" required placeholder="Ej. Cédula de Ciudadanía No. 1.000.000.000">
+                </div>
+
+                <div class="form-group">
+                    <label for="correo">Correo Electrónico de Notificación *</label>
+                    <input type="email" id="correo" name="correo" required placeholder="carlos.mendoza@email.com">
+                </div>
+
+                <div class="form-group">
+                    <label for="hechos">Hechos (Descripción ordenada de los acontecimientos) *</label>
+                    <textarea id="hechos" name="detalles" rows="6" required placeholder="1. Que el día...&#10;2. Que se presentó un retraso en la entrega de los servicios..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="peticiones">Peticiones (Lo que solicita concretamente) *</label>
+                    <textarea id="peticiones" name="peticiones" rows="5" required placeholder="PRIMERO: Solicito que se haga entrega inmediata de...&#10;SEGUNDO: Copia del contrato firmado..."></textarea>
+                </div>
+
+                <button type="submit" id="btnEnviar" class="btn-submit">Generar y Previsualizar</button>
+            </form>
+        </main>
+        
+        <section class="column-preview">
+            <h2>Previsualización Legal</h2>
+            <div class="preview-container">
+                <div id="placeholder" class="placeholder-text">
+                    <p>⚖️ Complete los datos requeridos y pulse "Generar y Previsualizar" para estructurar el formato en Google Docs.</p>
+                </div>
+                <iframe id="visorDocumento" src=""></iframe>
             </div>
+        </section>
 
-            <div class="form-group">
-                <label for="correo">Correo Electrónico *</label>
-                <input type="email" id="correo" name="correo" required placeholder="correo@ejemplo.com">
-            </div>
-
-            <div class="form-group">
-                <label for="tipo">Tipo de Soporte Documental *</label>
-                <select id="tipo" name="tipo_soporte" required>
-                    <option value="" disabled selected>Selecciona una opción</option>
-                    <option value="Contrato">Estructuración / Redacción de Contrato</option>
-                    <option value="Minuta">Elaboración de Minutas y Poderes</option>
-                    <option value="Corporativo">Documentación Corporativa / Actas</option>
-                    <option value="Revision">Revisión y Auditoría de Documento</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="fecha">Fecha Límite Requerida *</label>
-                <input type="date" id="fecha" name="fecha_limite" required>
-            </div>
-
-            <div class="form-group">
-                <label for="asunto">Asunto o Título del Documento *</label>
-                <input type="text" id="asunto" name="asunto" required placeholder="Ej. Contrato de Arrendamiento Comercial">
-            </div>
-
-            <div class="form-group">
-                <label for="detalles">Instrucciones y Datos Clave *</label>
-                <textarea id="detalles" name="detalles" rows="5" required placeholder="Describe las partes involucradas, condiciones específicas..."></textarea>
-            </div>
-
-            <button type="submit" id="btnEnviar" class="btn-submit">Enviar Requerimiento</button>
-        </form>
-    </main>
+    </div>
 
     <footer>
-        <p>&copy; 2026 Tu Soporte Legal. Todos los derechos reservados.</p>
+        <p>&copy; 2026 Soporte Documental Automatizado. Formatos estructurados bajo normativa vigente.</p>
     </footer>
 
     <script>
-        // RECUERDA COLOCAR TU URL AQUÍ ENTRE LAS COMILLAS
-        const URL_GOOGLE_SCRIPT = "https://script.google.com/macros/s/AKfycbxfA3zDADvrQ0B_G6nfm4q1FEtcCOvgxJS3a-FWFWveYt9gvfTGoyZ79-fBqll3UaMb/exec";
+        // PEGA AQUÍ TU URL DE GOOGLE APPS SCRIPT ENTRE LAS COMILLAS
+        const URL_GOOGLE_SCRIPT = "TU_URL_DE_APPS_SCRIPT_AQUI";
 
         document.getElementById('formSolicitud').addEventListener('submit', async function(e) {
             e.preventDefault();
 
             const form = e.target;
             const btn = document.getElementById('btnEnviar');
-            const msgExito = document.getElementById('msgExito');
-            const msgError = document.getElementById('msgError');
+            const placeholder = document.getElementById('placeholder');
+            const visor = document.getElementById('visorDocumento');
 
-            msgExito.style.display = 'none';
-            msgError.style.display = 'none';
             btn.disabled = true;
-            btn.innerText = "Registrando solicitud...";
+            btn.innerText = "Procesando Documento...";
+            placeholder.innerHTML = "<p>⚙️ Copiando plantilla legal y reemplazando variables... Por favor espere.</p>";
+            visor.style.display = "none";
 
             const formData = new FormData(form);
 
             try {
-                await fetch(URL_GOOGLE_SCRIPT, {
+                const respuesta = await fetch(URL_GOOGLE_SCRIPT, {
                     method: 'POST',
-                    mode: 'no-cors', 
                     body: formData
                 });
+                
+                const resultado = await respuesta.json();
 
-                msgExito.style.display = 'block';
-                form.reset();
+                if(resultado.status === "success") {
+                    placeholder.style.display = "none";
+                    visor.src = resultado.url;
+                    visor.style.display = "block";
+                } else {
+                    placeholder.innerHTML = "<p style='color:#b91c1c;'>❌ Error técnico: " + resultado.message + "</p>";
+                }
                 
             } catch (error) {
-                msgError.style.display = 'block';
-                console.error("Error de envío:", error);
+                placeholder.innerHTML = "<p>✓ Petición enviada. Si la previsualización directa está restringida por el navegador, el documento se habrá generado exitosamente en su Google Drive corporativo.</p>";
+                console.error("Detalle de comunicación:", error);
             } finally {
                 btn.disabled = false;
-                btn.innerText = "Enviar Requerimiento";
+                btn.innerText = "Generar y Previsualizar";
             }
         });
     </script>
