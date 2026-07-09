@@ -110,23 +110,23 @@
     <main class="container">
         <h2>Nueva Solicitud de Documento</h2>
         
-        <div id="msgExito" class="mensaje exito">¡Solicitud registrada con éxito en nuestro sistema de Google Sheets!</div>
+        <div id="msgExito" class="mensaje exito">¡Solicitud registrada con éxito en Google Sheets!</div>
         <div id="msgError" class="mensaje error">Hubo un problema al procesar la solicitud. Intente nuevamente.</div>
 
         <form id="formSolicitud">
             <div class="form-group">
                 <label for="nombre">Nombre Completo *</label>
-                <input type="text" id="nombre" required placeholder="Ej. Juan Pérez">
+                <input type="text" id="nombre" name="nombre" required placeholder="Ej. Juan Pérez">
             </div>
 
             <div class="form-group">
                 <label for="correo">Correo Electrónico *</label>
-                <input type="email" id="correo" required placeholder="correo@ejemplo.com">
+                <input type="email" id="correo" name="name" required placeholder="correo@ejemplo.com">
             </div>
 
             <div class="form-group">
                 <label for="tipo">Tipo de Soporte Documental *</label>
-                <select id="tipo" required>
+                <select id="tipo" name="tipo_soporte" required>
                     <option value="" disabled selected>Selecciona una opción</option>
                     <option value="Contrato">Estructuración / Redacción de Contrato</option>
                     <option value="Minuta">Elaboración de Minutas y Poderes</option>
@@ -137,17 +137,17 @@
 
             <div class="form-group">
                 <label for="fecha">Fecha Límite Requerida *</label>
-                <input type="date" id="fecha" required>
+                <input type="date" id="fecha" name="fecha_limite" required>
             </div>
 
             <div class="form-group">
                 <label for="asunto">Asunto o Título del Documento *</label>
-                <input type="text" id="asunto" required placeholder="Ej. Contrato de Arrendamiento Comercial">
+                <input type="text" id="asunto" name="asunto" required placeholder="Ej. Contrato de Arrendamiento Comercial">
             </div>
 
             <div class="form-group">
                 <label for="detalles">Instrucciones y Datos Clave *</label>
-                <textarea id="detalles" rows="5" required placeholder="Describe las partes involucradas, condiciones especiales..."></textarea>
+                <textarea id="detalles" name="detalles" rows="5" required placeholder="Describe las partes involucradas, condiciones específicas..."></textarea>
             </div>
 
             <button type="submit" id="btnEnviar" class="btn-submit">Enviar Requerimiento</button>
@@ -159,12 +159,13 @@
     </footer>
 
     <script>
-        // PEGA AQUÍ TU URL DE GOOGLE APPS SCRIPT
+        // PEGA AQUÍ TU URL DE GOOGLE APPS SCRIPT (Recuerda mantener las comillas)
         const URL_GOOGLE_SCRIPT = "https://script.google.com/macros/s/AKfycbxfA3zDADvrQ0B_G6nfm4q1FEtcCOvgxJS3a-FWFWveYt9gvfTGoyZ79-fBqll3UaMb/exec";
 
         document.getElementById('formSolicitud').addEventListener('submit', async function(e) {
             e.preventDefault();
 
+            const form = e.target;
             const btn = document.getElementById('btnEnviar');
             const msgExito = document.getElementById('msgExito');
             const msgError = document.getElementById('msgError');
@@ -174,33 +175,24 @@
             btn.disabled = true;
             btn.innerText = "Registrando solicitud...";
 
-            const datosFormulario = {
-                nombre: document.getElementById('nombre').value,
-                correo: document.getElementById('correo').value,
-                tipo_soporte: document.getElementById('tipo').value,
-                fecha_limite: document.getElementById('fecha').value,
-                asunto: document.getElementById('asunto').value,
-                detalles: document.getElementById('detalles').value
-            };
+            // Recolectar datos en formato de formulario tradicional
+            const formData = new FormData(form);
 
             try {
-                // Envío de datos cruzando orígenes (CORS modo no-cors para evitar bloqueos del navegador con scripts de Google)
+                // Enviamos los datos directamente usando la API Fetch
                 await fetch(URL_GOOGLE_SCRIPT, {
                     method: 'POST',
-                    mode: 'no-cors', 
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(datosFormulario)
+                    mode: 'no-cors', // Evita bloqueos de seguridad del navegador
+                    body: formData
                 });
 
-                // Como usamos 'no-cors', asumimos éxito si no se dispara el bloque catch
+                // Al usar 'no-cors' la respuesta es opaca, si no hay error de red, asumimos éxito
                 msgExito.style.display = 'block';
-                document.getElementById('formSolicitud').reset();
+                form.reset();
                 
             } catch (error) {
                 msgError.style.display = 'block';
-                console.error("Error al enviar a Google Sheets:", error);
+                console.error("Error de envío:", error);
             } finally {
                 btn.disabled = false;
                 btn.innerText = "Enviar Requerimiento";
