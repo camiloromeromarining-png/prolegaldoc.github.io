@@ -66,147 +66,152 @@
     </div>
 
 <script>
-        // ==========================================
-        // CONFIGURACIÓN: COLOCA TU URL DE GOOGLE APPS SCRIPT AQUÍ.
-        // ==========================================
-        const URL_GOOGLE_SCRIPT = "https://script.google.com/macros/s/AKfycbw0R0_5hHntWd12DBJR8l1Cg9gHDRwxpD2-5-KiXHFDBB1X5NW6oiUfcDNcvEHCBNUqpA/exec";
-        // ==========================================
+// ==========================================
+// CONFIGURACIÓN: COLOCA TU URL DE GOOGLE APPS SCRIPT AQUÍ
+// ==========================================
+const URL_GOOGLE_SCRIPT = "TU_URL_DE_APPS_SCRIPT_AQUI";
+// ==========================================
 
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
-        let historialChat = [
-            { role: "user", parts: [{ text: "Actúa como un asistente legal experto. Tu único objetivo es entrevistar al usuario amablemente para extraer estos 7 campos para un Derecho de Petición: 1.Ciudad y Fecha, 2.Entidad destinataria, 3.Nombre completo, 4.Cédula/Identificación, 5.Correo electrónico, 6.Hechos cronológicos y 7.Peticiones concretas. Haz una pregunta a la vez de forma conversacional y concisa. Cuando ya tengas absolutamente TODOS los datos de la entrevista, responde EXACTAMENTE y únicamente con la palabra 'COMPLETO' seguida de un objeto JSON estructurado que contenga los campos con las mismas llaves, ejemplo: COMPLETO {\"fecha_limite\":\"...\", \"asunto\":\"...\", \"nombre\":\"...\", \"tipo_soporte\":\"...\", \"correo\":\"...\", \"detalles\":\"...\", \"peticiones\":\"...\"}." }] },
-            { role: "model", parts: [{ text: "Entendido. Iniciaré la entrevista y al recopilar todos los campos requeridos responderé con la palabra clave y el JSON estructurado." }] }
-        ];
+let historialChat = [
+    { role: "user", parts: [{ text: "Actúa como un asistente legal experto. Tu único objetivo es entrevistar al usuario amablemente para extraer estos 7 campos para un Derecho de Petición: 1.Ciudad y Fecha, 2.Entidad destinataria, 3.Nombre completo, 4.Cédula/Identificación, 5.Correo electrónico, 6.Hechos cronológicos y 7.Peticiones concretas. Haz una pregunta a la vez de forma conversacional y concisa. Cuando ya tengas absolutamente TODOS los datos de la entrevista, responde EXACTAMENTE y únicamente con la palabra 'COMPLETO' seguida de un objeto JSON estructurado que contenga los campos con las mismas llaves, ejemplo: COMPLETO {\"fecha_limite\":\"...\", \"asunto\":\"...\", \"nombre\":\"...\", \"tipo_soporte\":\"...\", \"correo\":\"...\", \"detalles\":\"...\", \"peticiones\":\"...\"}." }] },
+    { role: "model", parts: [{ text: "Entendido. Iniciaré la entrevista y al recopilar todos los campos requeridos responderé con la palabra clave y el JSON estructurado." }] }
+];
 
-        const chatMessages = document.getElementById('chatMessages');
-        const userInput = document.getElementById('userInput');
-        const btnEnviarChat = document.getElementById('btnEnviarChat');
+const chatMessages = document.getElementById('chatMessages');
+const userInput = document.getElementById('userInput');
+const btnEnviarChat = document.getElementById('btnEnviarChat');
 
-        function appendMessage(sender, text) {
-            const msgDiv = document.createElement('div');
-            msgDiv.classList.add('message', sender);
-            msgDiv.innerText = text;
-            chatMessages.appendChild(msgDiv);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
+function appendMessage(sender, text) {
+    const msgDiv = document.createElement('div');
+    msgDiv.classList.add('message', sender);
+    msgDiv.innerText = text;
+    chatMessages.appendChild(msgDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
 
-        async function procesarMensaje() {
-            const textoUsuario = userInput.value.trim();
-            if (!textoUsuario) return;
+// Función auxiliar para realizar llamadas JSONP (Inmune a CORS)
+function jsonpRequest(url, params) {
+    return new Promise((resolve, reject) => {
+        const callbackName = 'googleCallback_' + Math.round(100000 * Math.random());
+        window[callbackName] = function(data) {
+            delete window[callbackName];
+            document.body.removeChild(script);
+            resolve(data);
+        };
 
-            appendMessage('user', textoUsuario);
-            userInput.value = "";
-            userInput.disabled = true;
-            btnEnviarChat.disabled = true;
+        const queryParams = new URLSearchParams(params);
+        queryParams.append('callback', callbackName);
 
-            historialChat.push({ role: "user", parts: [{ text: textoUsuario }] });
+        const script = document.createElement('script');
+        script.src = url + '?' + queryParams.toString();
+        script.onerror = function() {
+            delete window[callbackName];
+            document.body.removeChild(script);
+            reject(new Error("Error de carga de script de red."));
+        };
+        document.body.appendChild(script);
+    });
+}
 
-            try {
-                // Realizamos el envío con modo "cors" pero procesando la respuesta de redirección de Google
-                const respuestaWeb = await fetch(URL_GOOGLE_SCRIPT, {
-                    method: 'POST',
-                    mode: 'cors',
-                    headers: {
-                        'Content-Type': 'text/plain' // Evita disparar el preflight CORS complejo de navegadores
-                    },
-                    body: JSON.stringify({
-                        action: "chat",
-                        historial: historialChat
-                    })
-                });
+async function procesarMensaje() {
+    const textoUsuario = userInput.value.trim();
+    if (!textoUsuario) return;
 
-                const textoPlano = await respuestaWeb.text();
-                const data = JSON.parse(textoPlano);
+    appendMessage('user', textoUsuario);
+    userInput.value = "";
+    userInput.disabled = true;
+    btnEnviarChat.disabled = true;
+
+    historialChat.push({ role: "user", parts: [{ text: textoUsuario }] });
+
+    try {
+        // Petición inmune a CORS y restricciones de navegador local
+        const data = await jsonpRequest(URL_GOOGLE_SCRIPT, {
+            action: "chat",
+            historial: JSON.stringify(historialChat)
+        });
+
+        if (data.status === "success") {
+            const respuestaTexto = data.texto.trim();
+
+            if (respuestaTexto.includes("COMPLETO")) {
+                appendMessage('ia', "¡Excelente! He recopilado toda la información requerida. Estoy procesando tu documento legal en este momento...");
                 
-                if (data.status === "success") {
-                    const respuestaTexto = data.texto.trim();
-
-                    if (respuestaTexto.includes("COMPLETO")) {
-                        appendMessage('ia', "¡Excelente! He recopilado toda la información requerida. Estoy procesando tu documento legal en este momento...");
-                        
-                        const inicioJson = respuestaTexto.indexOf('{');
-                        const finJson = respuestaTexto.lastIndexOf('}') + 1;
-                        const jsonString = respuestaTexto.substring(inicioJson, finJson);
-                        
-                        const datosCapturados = JSON.parse(jsonString);
-                        enviarAGenerarDocumento(datosCapturados);
-                    } else {
-                        appendMessage('ia', respuestaTexto);
-                        historialChat.push({ role: "model", parts: [{ text: respuestaTexto }] });
-                        
-                        userInput.disabled = false;
-                        btnEnviarChat.disabled = false;
-                        userInput.focus();
-                    }
-                } else {
-                    throw new Error(data.message);
-                }
-            } catch (error) {
-                console.error("Detalle del error:", error);
+                const inicioJson = respuestaTexto.indexOf('{');
+                const finJson = respuestaTexto.lastIndexOf('}') + 1;
+                const jsonString = respuestaTexto.substring(inicioJson, finJson);
                 
-                // Si hay un bloqueo CORS estricto local, le damos una alternativa directa al usuario
-                appendMessage('ia', "Estamos teniendo restricciones de comunicación directa con Google desde tu entorno de red. Si deseas, podemos procesar los datos de forma manual. Por favor asegúrate de que la URL de Apps Script en tu código sea idéntica a la implementada.");
+                const datosCapturados = JSON.parse(jsonString);
+                enviarAGenerarDocumento(datosCapturados);
+            } else {
+                appendMessage('ia', respuestaTexto);
+                historialChat.push({ role: "model", parts: [{ text: respuestaTexto }] });
                 
                 userInput.disabled = false;
                 btnEnviarChat.disabled = false;
                 userInput.focus();
             }
+        } else {
+            throw new Error(data.message);
         }
+    } catch (error) {
+        console.error("Detalle del error:", error);
+        appendMessage('ia', "Se presentó un pequeño retraso de red. ¿Podrías volver a enviar tu último mensaje?");
+        userInput.disabled = false;
+        btnEnviarChat.disabled = false;
+        userInput.focus();
+    }
+}
 
-        async function enviarAGenerarDocumento(datos) {
-            const placeholder = document.getElementById('placeholder');
-            const canvas = document.getElementById('canvasDocumento');
-            placeholder.innerHTML = "<p>⚙️ La IA está estructurando la minuta en Google Docs y convirtiéndola a imagen... Por favor espere.</p>";
+async function enviarAGenerarDocumento(datos) {
+    const placeholder = document.getElementById('placeholder');
+    const canvas = document.getElementById('canvasDocumento');
+    placeholder.innerHTML = "<p>⚙️ La IA está estructurando la minuta en Google Docs y convirtiéndola a imagen... Por favor espere.</p>";
 
-            try {
-                const respuesta = await fetch(URL_GOOGLE_SCRIPT, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain' },
-                    body: JSON.stringify({
-                        action: "generar",
-                        datos: datos
-                    })
-                });
-                const textoPlano = await respuesta.text();
-                const resultado = JSON.parse(textoPlano);
-
-                if(resultado.status === "success") {
-                    const idArchivo = resultado.url.split('/d/')[1].split('/')[0];
-                    const urlDescargaDirecta = `https://docs.google.com/uc?export=download&id=${idArchivo}`;
-
-                    const cargandoPdf = pdfjsLib.getDocument(urlDescargaDirecta);
-                    cargandoPdf.promise.then(function(pdf) {
-                        pdf.getPage(1).then(function(page) {
-                            const viewport = page.getViewport({ scale: 1.5 });
-                            const context = canvas.getContext('2d');
-                            canvas.height = viewport.height;
-                            canvas.width = viewport.width;
-
-                            const renderContext = { canvasContext: context, viewport: viewport };
-                            page.render(renderContext).promise.then(function() {
-                                placeholder.style.display = "none";
-                                canvas.style.display = "block"; 
-                                appendMessage('ia', "¡Tu documento se ha renderizado como imagen correctamente a la derecha! Ha sido archivado con éxito.");
-                            });
-                        });
-                    }).catch(err => {
-                        placeholder.innerHTML = `<p>✓ Documento generado con éxito.<br><br><a href="${resultado.url}" target="_blank" style="color:#2563eb; font-weight:bold;">Haz clic aquí para ver la previsualización directa fija</a></p>`;
-                    });
-                }
-            } catch (e) {
-                placeholder.innerHTML = "<p>✓ El documento se estructuró correctamente y se guardó en la raíz de Google Drive.</p>";
-                appendMessage('ia', "Proceso finalizado con éxito. El archivo quedó archivado de forma segura.");
-            }
-        }
-
-        btnEnviarChat.addEventListener('click', procesarMensaje);
-        userInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                procesarMensaje();
-            }
+    try {
+        const resultado = await jsonpRequest(URL_GOOGLE_SCRIPT, {
+            action: "generar",
+            datos: JSON.stringify(datos)
         });
-    </script>
+
+        if(resultado.status === "success") {
+            const idArchivo = resultado.url.split('/d/')[1].split('/')[0];
+            const urlDescargaDirecta = `https://docs.google.com/uc?export=download&id=${idArchivo}`;
+
+            const cargandoPdf = pdfjsLib.getDocument(urlDescargaDirecta);
+            cargandoPdf.promise.then(function(pdf) {
+                pdf.getPage(1).then(function(page) {
+                    const viewport = page.getViewport({ scale: 1.5 });
+                    const context = canvas.getContext('2d');
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+
+                    const renderContext = { canvasContext: context, viewport: viewport };
+                    page.render(renderContext).promise.then(function() {
+                        placeholder.style.display = "none";
+                        canvas.style.display = "block"; 
+                        appendMessage('ia', "¡Tu documento se ha renderizado como imagen correctamente a la derecha! Ha sido archivado con éxito.");
+                    });
+                });
+            }).catch(err => {
+                placeholder.innerHTML = `<p>✓ Documento generado con éxito.<br><br><a href="${resultado.url}" target="_blank" style="color:#2563eb; font-weight:bold;">Haz clic aquí para ver la previsualización directa fija</a></p>`;
+            });
+        }
+    } catch (e) {
+        placeholder.innerHTML = "<p>✓ El documento se estructuró correctamente y se guardó en la raíz de Google Drive.</p>";
+        appendMessage('ia', "Proceso finalizado con éxito. El archivo quedó archivado de forma segura.");
+    }
+}
+
+btnEnviarChat.addEventListener('click', procesarMensaje);
+userInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        procesarMensaje();
+    }
+});
+</script>
 </body>
 </html>
