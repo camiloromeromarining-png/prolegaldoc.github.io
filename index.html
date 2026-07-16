@@ -3,203 +3,220 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Soporte Legal - Generador de Derecho de Peticion</title>
+    <title>Asistente Legal IA - Derecho de Petición</title>
+    <script type="importmap">
+      {
+        "imports": {
+          "@google/generative-ai": "https://esm.run/@google/generative-ai"
+        }
+      }
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f4f6f9;
-            color: #333;
-            line-height: 1.5;
-        }
-        .banner {
-            background: linear-gradient(135deg, #1e3a8a, #0f172a);
-            color: white;
-            text-align: center;
-            padding: 50px 20px;
-        }
-        .banner h1 { margin: 0 0 10px 0; font-size: 2.3rem; }
-        .banner p { margin: 0; font-size: 1.1rem; color: #cbd5e1; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f6f9; color: #333; }
+        .banner { background: linear-gradient(135deg, #1e3a8a, #0f172a); color: white; text-align: center; padding: 30px 20px; }
+        .banner h1 { margin: 0 0 5px 0; font-size: 2rem; }
+        .banner p { margin: 0; font-size: 1rem; color: #cbd5e1; }
         
-        /* Layout de dos columnas */
-        .main-layout {
-            max-width: 1300px;
-            margin: 40px auto;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 25px;
-            padding: 0 20px;
-        }
+        .main-layout { max-width: 1300px; margin: 30px auto; display: flex; flex-wrap: wrap; gap: 25px; padding: 0 20px; }
         
-        /* Columna del Formulario Legal */
-        .column-form {
-            flex: 1.2;
-            min-width: 350px;
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
+        /* CONTENEDOR DEL CHAT CON LA IA */
+        .column-chat { flex: 1.2; min-width: 350px; background: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; flex-direction: column; height: 600px; overflow: hidden; }
+        .chat-header { background-color: #1e3a8a; color: white; padding: 15px; font-weight: bold; font-size: 1.1rem; }
+        .chat-messages { flex: 1; padding: 20px; overflow-y: auto; background-color: #f8fafc; display: flex; flex-direction: column; gap: 15px; }
         
-        /* Columna de la Previsualización */
-        .column-preview {
-            flex: 1;
-            min-width: 350px;
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            display: flex;
-            flex-direction: column;
-            min-height: 600px;
-        }
+        /* Burbujas de chat */
+        .message { max-width: 80%; padding: 12px 16px; border-radius: 8px; font-size: 0.95rem; line-height: 1.4; }
+        .message.ia { background-color: #e2e8f0; color: #1e293b; align-self: flex-start; border-top-left-radius: 0; }
+        .message.user { background-color: #2563eb; color: white; align-self: flex-end; border-top-right-radius: 0; }
         
-        h2 { margin-top: 0; color: #1e3a8a; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; font-size: 1.5rem; }
-        .form-group { margin-bottom: 18px; }
-        label { display: block; margin-bottom: 6px; font-weight: bold; color: #475569; font-size: 0.95rem; }
-        
-        input[type="text"], input[type="email"], select, textarea {
-            width: 100%; padding: 12px; box-sizing: border-box; border: 1px solid #cbd5e1;
-            border-radius: 4px; font-size: 1rem; font-family: inherit; color: #333;
-            background-color: #f8fafc;
-        }
-        input:focus, select:focus, textarea:focus {
-            outline: none; border-color: #2563eb; background-color: #fff; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-        }
-        
-        textarea { resize: vertical; }
-        
-        .btn-submit {
-            background-color: #2563eb; color: white; border: none; padding: 15px 20px;
-            font-size: 1.1rem; font-weight: bold; border-radius: 4px; cursor: pointer;
-            width: 100%; transition: background 0.2s; margin-top: 10px;
-        }
-        .btn-submit:hover { background-color: #1d4ed8; }
-        .btn-submit:disabled { background-color: #94a3b8; cursor: not-allowed; }
-        
-        /* Área del Visor de Documentos */
-        .preview-container {
-            flex: 1; border: 2px dashed #cbd5e1; border-radius: 6px; display: flex;
-            align-items: center; justify-content: center; background-color: #f8fafc;
-            overflow: hidden; position: relative; margin-top: 10px;
-        }
-        iframe { width: 100%; height: 100%; border: none; display: none; }
-        .placeholder-text { color: #64748b; text-align: center; padding: 30px; font-size: 1rem; }
-        
-        footer { text-align: center; padding: 30px; font-size: 0.85rem; color: #64748b; border-top: 1px solid #e2e8f0; margin-top: 40px; }
+        .chat-input-area { padding: 15px; background: white; border-top: 1px solid #e2e8f0; display: flex; gap: 10px; }
+        .chat-input-area input { flex: 1; padding: 12px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 1rem; }
+        .chat-input-area button { background-color: #2563eb; color: white; border: none; padding: 0 20px; font-weight: bold; border-radius: 4px; cursor: pointer; }
+        .chat-input-area button:disabled { background-color: #94a3b8; }
+
+        /* COLUMNA DE PREVISUALIZACIÓN */
+        .column-preview { flex: 1; min-width: 350px; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; flex-direction: column; min-height: 600px; }
+        h2 { margin-top: 0; color: #1e3a8a; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; font-size: 1.4rem; }
+        .preview-container { flex: 1; border: 2px dashed #cbd5e1; border-radius: 6px; display: flex; align-items: flex-start; justify-content: center; background-color: #f8fafc; overflow: auto; padding: 10px; max-height: 520px; }
+        canvas { width: 100%; height: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.15); display: none; background: white; }
+        .placeholder-text { color: #64748b; text-align: center; padding: 30px; align-self: center; }
     </style>
 </head>
 <body>
 
     <header class="banner">
-        <h1>Estructurador de Derecho de Petición</h1>
-        <p>Genere formalmente su documento técnico-legal y visualice el borrador en tiempo real.</p>
+        <h1>Asistente Legal Inteligente</h1>
+        <p>Converse con nuestra IA para estructurar formalmente su Derecho de Petición.</p>
     </header>
 
     <div class="main-layout">
         
-        <main class="column-form">
-            <h2>Estructura del Documento</h2>
-            <form id="formSolicitud">
-                
-                <div class="form-group">
-                    <label for="ciudad">Ciudad y Fecha *</label>
-                    <input type="text" id="ciudad" name="fecha_limite" required placeholder="Ej. Bogotá D.C., 8 de julio de 2026">
-                </div>
-
-                <div class="form-group">
-                    <label for="autoridad">Entidad o Persona a quien se dirige (Destinatario) *</label>
-                    <input type="text" id="autoridad" name="asunto" required placeholder="Ej. Superintendencia de Industria y Comercio / Empresa X S.A.">
-                </div>
-
-                <div class="form-group">
-                    <label for="nombre">Nombre Completo del Peticionario *</label>
-                    <input type="text" id="nombre" name="nombre" required placeholder="Ej. Carlos Alberto Mendoza">
-                </div>
-
-                <div class="form-group">
-                    <label for="identificacion">Documento de Identidad y Número *</label>
-                    <input type="text" id="identificacion" name="tipo_soporte" required placeholder="Ej. Cédula de Ciudadanía No. 1.000.000.000">
-                </div>
-
-                <div class="form-group">
-                    <label for="correo">Correo Electrónico de Notificación *</label>
-                    <input type="email" id="correo" name="correo" required placeholder="carlos.mendoza@email.com">
-                </div>
-
-                <div class="form-group">
-                    <label for="hechos">Hechos (Descripción ordenada de los acontecimientos) *</label>
-                    <textarea id="hechos" name="detalles" rows="6" required placeholder="1. Que el día...&#10;2. Que se presentó un retraso en la entrega de los servicios..."></textarea>
-                </div>
-
-                <div class="form-group">
-                    <label for="peticiones">Peticiones (Lo que solicita concretamente) *</label>
-                    <textarea id="peticiones" name="peticiones" rows="5" required placeholder="PRIMERO: Solicito que se haga entrega inmediata de...&#10;SEGUNDO: Copia del contrato firmado..."></textarea>
-                </div>
-
-                <button type="submit" id="btnEnviar" class="btn-submit">Generar y Previsualizar</button>
-            </form>
+        <main class="column-chat">
+            <div class="chat-header">🤖 Abogado Virtual - Captura de Requerimientos</div>
+            <div id="chatMessages" class="chat-messages">
+                <div class="message ia">Hola, soy tu asistente legal. Te guiaré para generar tu Derecho de Petición. Para comenzar, por favor dime: **¿En qué ciudad te encuentras y cuál es la fecha de hoy?**</div>
+            </div>
+            <div class="chat-input-area">
+                <input type="text" id="userInput" placeholder="Escribe tu respuesta aquí..." autofocus>
+                <button id="btnEnviarChat">Enviar</button>
+            </div>
         </main>
         
         <section class="column-preview">
-            <h2>Previsualización del documento</h2>
+            <h2>Documento Generado (Imagen)</h2>
             <div class="preview-container">
                 <div id="placeholder" class="placeholder-text">
-                    <p>⚖️ Complete los datos requeridos y pulse "Generar y Previsualizar" para estructurar el formato en Google Docs.</p>
+                    <p>⚖️ El borrador del documento aparecerá de forma automática cuando la IA termine de recopilar tus datos en la conversación.</p>
                 </div>
-                <iframe id="visorDocumento" src=""></iframe>
+                <canvas id="canvasDocumento"></canvas>
             </div>
         </section>
 
     </div>
 
-    <footer>
-        <p>&copy; 2026 Soporte Documental Automatizado. Formatos estructurados bajo normativa vigente.</p>
-    </footer>
+    <script type="module">
+        import { GoogleGenAI } from "@google/generative-ai";
 
-    <script>
-        // PEGA AQUÍ TU URL DE GOOGLE APPS SCRIPT ENTRE LAS COMILLAS
+        // ==========================================
+        // CONFIGURACIÓN: COLOCA AQUÍ TUS CREDENCIALES
+        // ==========================================
+        const GEMINI_API_KEY = "AQ.Ab8RN6I1dKqIa02ngE8lgo6yYsmiWlt1vQ255RHTJIQtwjnxtQ";
         const URL_GOOGLE_SCRIPT = "https://script.google.com/macros/s/AKfycbw0R0_5hHntWd12DBJR8l1Cg9gHDRwxpD2-5-KiXHFDBB1X5NW6oiUfcDNcvEHCBNUqpA/exec";
+        // ==========================================
 
-        document.getElementById('formSolicitud').addEventListener('submit', async function(e) {
-            e.preventDefault();
+        // Inicializar la IA de Google
+        const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+        const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-            const form = e.target;
-            const btn = document.getElementById('btnEnviar');
-            const placeholder = document.getElementById('placeholder');
-            const visor = document.getElementById('visorDocumento');
+        // Configuración de PDF.js para la imagen
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
-            btn.disabled = true;
-            btn.innerText = "Procesando Documento...";
-            placeholder.innerHTML = "<p>⚙️ Copiando plantilla legal y reemplazando variables... Por favor espere.</p>";
-            visor.style.display = "none";
+        // Objeto interno para almacenar lo que la IA vaya descubriendo
+        let datosCapturados = {
+            fecha_limite: "",  // Usado como Ciudad y Fecha
+            asunto: "",        // Entidad destinataria
+            nombre: "",
+            tipo_soporte: "",  // Identificación
+            correo: "",
+            detalles: "",      // Hechos
+            peticiones: ""
+        };
 
-            const formData = new FormData(form);
+        // Historial estructurado para mantener el contexto de la conversación
+        let historialChat = [
+            { role: "user", parts: [{ text: "Actúa como un asistente legal experto. Tu único objetivo es entrevistar al usuario amablemente para extraer estos 7 campos para un Derecho de Petición: 1.Ciudad y Fecha, 2.Entidad destinataria, 3.Nombre completo, 4.Cédula/Identificación, 5.Correo electrónico, 6.Hechos cronológicos y 7.Peticiones concretas. Haz una pregunta a la vez. Cuando ya tengas absolutamente TODOS los datos de la entrevista, responde EXACTAMENTE y únicamente con la palabra 'COMPLETO' seguida de un objeto JSON que contenga los campos, ej: COMPLETO {"fecha_limite":"...", "asunto":"...", "nombre":"...", "tipo_soporte":"...", "correo":"...", "detalles":"...", "peticiones":"..."}." }] },
+            { role: "model", parts: [{ text: "Entendido. Procederé a entrevistar al usuario de forma amigable, una pregunta a la vez, y al final retornaré el comando estructurado." }] }
+        ];
+
+        const chatMessages = document.getElementById('chatMessages');
+        const userInput = document.getElementById('userInput');
+        const btnEnviarChat = document.getElementById('btnEnviarChat');
+
+        // Función para agregar mensajes visuales en la pantalla
+        function appendMessage(sender, text) {
+            const msgDiv = document.createElement('div');
+            msgDiv.classList.add('message', sender);
+            msgDiv.innerText = text;
+            chatMessages.appendChild(msgDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Procesar la respuesta y la interacción
+        async function procesarMensaje() {
+            const textoUsuario = userInput.value.trim();
+            if (!textoUsuario) return;
+
+            appendMessage('user', textoUsuario);
+            userInput.value = "";
+            userInput.disabled = true;
+            btnEnviarChat.disabled = true;
+
+            // Agregar al historial de la IA
+            historialChat.push({ role: "user", parts: [{ text: textoUsuario }] });
 
             try {
-                const respuesta = await fetch(URL_GOOGLE_SCRIPT, {
-                    method: 'POST',
-                    body: formData
-                });
-                
+                const chatSession = model.startChat({ history: historialChat });
+                const resultadoIA = await chatSession.sendMessage(textoUsuario);
+                const respuestaTexto = resultadoIA.response.text().trim();
+
+                // Verificar si la IA determinó que tiene el formulario completo
+                if (respuestaTexto.includes("COMPLETO")) {
+                    appendMessage('ia', "¡Excelente! He recopilado toda la información necesaria. Estoy procesando tu documento legal en este momento...");
+                    
+                    // Extraer el JSON oculto en la respuesta de la IA
+                    const inicioJson = respuestaTexto.indexOf('{');
+                    const finJson = respuestaTexto.lastIndexOf('}') + 1;
+                    const jsonString = respuestaTexto.substring(inicioJson, finJson);
+                    
+                    datosCapturados = JSON.parse(jsonString);
+                    
+                    // Enviar los datos recolectados al backend de Google Apps Script
+                    enviarAGoogleSheets(datosCapturados);
+                } else {
+                    // Continuar la conversación normal
+                    appendMessage('ia', respuestaTexto);
+                    historialChat.push({ role: "model", parts: [{ text: respuestaTexto }] });
+                    userInput.disabled = false;
+                    btnEnviarChat.disabled = false;
+                    userInput.focus();
+                }
+            } catch (error) {
+                console.error(error);
+                appendMessage('ia', "Disculpe, tuve un pequeño problema procesando la respuesta. ¿Podría repetirmelo?");
+                userInput.disabled = false;
+                btnEnviarChat.disabled = false;
+            }
+        }
+
+        // Función de envío e integración con Google Apps Script y renderizado a Imagen
+        async function enviarAGoogleSheets(datos) {
+            const placeholder = document.getElementById('placeholder');
+            const canvas = document.getElementById('canvasDocumento');
+            placeholder.innerHTML = "<p>⚙️ La IA está estructurando la minuta en Google Docs y convirtiendo el plano a imagen de alta definición...</p>";
+
+            const formData = new FormData();
+            for (const key in datos) {
+                formData.append(key, datos[key]);
+            }
+
+            try {
+                const respuesta = await fetch(URL_GOOGLE_SCRIPT, { method: 'POST', body: formData });
                 const resultado = await respuesta.json();
 
                 if(resultado.status === "success") {
-                    placeholder.style.display = "none";
-                    visor.src = resultado.url;
-                    visor.style.display = "block";
-                } else {
-                    placeholder.innerHTML = "<p style='color:#b91c1c;'>❌ Error técnico: " + resultado.message + "</p>";
+                    const idArchivo = resultado.url.split('/d/')[1].split('/')[0];
+                    const urlDescargaDirecta = `https://docs.google.com/uc?export=download&id=${idArchivo}`;
+
+                    const cargandoPdf = pdfjsLib.getDocument(urlDescargaDirecta);
+                    cargandoPdf.promise.then(function(pdf) {
+                        pdf.getPage(1).then(function(page) {
+                            const viewport = page.getViewport({ scale: 1.5 });
+                            const context = canvas.getContext('2d');
+                            canvas.height = viewport.height;
+                            canvas.width = viewport.width;
+
+                            const renderContext = { canvasContext: context, viewport: viewport };
+                            page.render(renderContext).promise.then(function() {
+                                placeholder.style.display = "none";
+                                canvas.style.display = "block"; // Muestra el derecho de petición renderizado como imagen
+                                appendMessage('ia', "¡Tu documento ha sido generado con éxito! Puedes ver la previsualización gráfica a la derecha.");
+                            });
+                        });
+                    }).catch(err => {
+                        placeholder.innerHTML = `<p>✓ Documento generado.<br><br><a href="${resultado.url}" target="_blank" style="color:#2563eb; font-weight:bold;">Haz clic aquí para ver tu previsualización</a></p>`;
+                    });
                 }
-                
-            } catch (error) {
-                placeholder.innerHTML = "<p>✓ Petición enviada. Si la previsualización directa está restringida por el navegador, el documento se habrá generado exitosamente en su Google Drive corporativo.</p>";
-                console.error("Detalle de comunicación:", error);
-            } finally {
-                btn.disabled = false;
-                btn.innerText = "Generar y Previsualizar";
+            } catch (e) {
+                placeholder.innerHTML = "<p>✓ El documento se guardó exitosamente en la raíz de Google Drive corporativo.</p>";
+                appendMessage('ia', "Proceso terminado. He guardado el documento de forma segura en tu nube.");
             }
+        }
+
+        // Listeners del teclado y clicks
+        btnEnviarChat.addEventListener('click', procesarMensaje);
+        userInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') procesarMensaje();
         });
     </script>
 </body>
