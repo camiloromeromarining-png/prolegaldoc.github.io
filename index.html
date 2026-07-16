@@ -127,13 +127,14 @@ async function procesarMensaje() {
     historialChat.push({ role: "user", parts: [{ text: textoUsuario }] });
 
     try {
-        // Petición inmune a CORS y restricciones de navegador local
+        // Petición de red asíncrona JSONP
         const data = await jsonpRequest(URL_GOOGLE_SCRIPT, {
             action: "chat",
             historial: JSON.stringify(historialChat)
         });
 
-        if (data.status === "success") {
+        // Verificamos que la respuesta del servidor de Google haya sido exitosa
+        if (data && data.status === "success") {
             const respuestaTexto = data.texto.trim();
 
             if (respuestaTexto.includes("COMPLETO")) {
@@ -143,8 +144,8 @@ async function procesarMensaje() {
                 const finJson = respuestaTexto.lastIndexOf('}') + 1;
                 const jsonString = respuestaTexto.substring(inicioJson, finJson);
                 
-                const datosCapturados = JSON.parse(jsonString);
-                enviarAGenerarDocumento(datosCapturados);
+                const datosCaptured = JSON.parse(jsonString);
+                enviarAGenerarDocumento(datosCaptured);
             } else {
                 appendMessage('ia', respuestaTexto);
                 historialChat.push({ role: "model", parts: [{ text: respuestaTexto }] });
@@ -154,11 +155,16 @@ async function procesarMensaje() {
                 userInput.focus();
             }
         } else {
-            throw new Error(data.message);
+            // Si el backend reportó un error controlado (ej: Clave de API inválida)
+            const mensajeError = data && data.texto ? data.texto : "Error desconocido en el servidor de Google.";
+            throw new Error(mensajeError);
         }
     } catch (error) {
         console.error("Detalle del error:", error);
-        appendMessage('ia', "Se presentó un pequeño retraso de red. ¿Podrías volver a enviar tu último mensaje?");
+        
+        // Mostramos el diagnóstico exacto en el chat para que sepas qué corregir
+        appendMessage('ia', `⚠️ Ocurrió un error al procesar tu mensaje. Diagnóstico técnico: ${error.message}`);
+        
         userInput.disabled = false;
         btnEnviarChat.disabled = false;
         userInput.focus();
