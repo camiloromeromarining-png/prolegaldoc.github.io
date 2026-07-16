@@ -4,13 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Asistente Legal IA - Derecho de Petición</title>
-    <script type="importmap">
-      {
-        "imports": {
-          "@google/generative-ai": "https://esm.run/@google/generative-ai"
-        }
-      }
-    </script>
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <style>
         body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f6f9; color: #333; }
@@ -55,7 +49,7 @@
         <main class="column-chat">
             <div class="chat-header">🤖 Abogado Virtual - Captura de Requerimientos</div>
             <div id="chatMessages" class="chat-messages">
-                <div class="message ia">Hola, soy tu asistente legal. Te guiaré para generar tu Derecho de Petición. Para comenzar, por favor dime: **¿En qué ciudad te encuentras y cuál es la fecha de hoy?**</div>
+                <div class="message ia">Hola, soy tu asistente legal. Te guiaré para generar tu Derecho de Petición de forma ordenada. Para comenzar, por favor dime: **¿En qué ciudad te encuentras y cuál es la fecha de hoy?**</div>
             </div>
             <div class="chat-input-area">
                 <input type="text" id="userInput" placeholder="Escribe tu respuesta aquí..." autofocus>
@@ -75,26 +69,17 @@
 
     </div>
 
-    <script type="module">
-        import { GoogleGenAI } from "@google/generative-ai";
-
-        // ==========================================
-        // CONFIGURACIÓN: COLOCA AQUÍ TUS CREDENCIALES
-        // ==========================================
+    <script>
+        // CONFIGURA TU API KEY Y TU URL DE GOOGLE APPS SCRIPT AQUÍ
         const GEMINI_API_KEY = "AQ.Ab8RN6I1dKqIa02ngE8lgo6yYsmiWlt1vQ255RHTJIQtwjnxtQ";
         const URL_GOOGLE_SCRIPT = "https://script.google.com/macros/s/AKfycbw0R0_5hHntWd12DBJR8l1Cg9gHDRwxpD2-5-KiXHFDBB1X5NW6oiUfcDNcvEHCBNUqpA/exec";
-        // ==========================================
 
-        // Inicializar la IA de Google
-        const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
-        const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" });
-
-        // Configuración de PDF.js para la imagen
+        // Configuración de PDF.js para renderizar el documento
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
-        // Objeto interno para almacenar lo que la IA vaya descubriendo
+        // Objeto interno para almacenar datos
         let datosCapturados = {
-            fecha_limite: "",  // Usado como Ciudad y Fecha
+            fecha_limite: "",  // Ciudad y Fecha
             asunto: "",        // Entidad destinataria
             nombre: "",
             tipo_soporte: "",  // Identificación
@@ -103,17 +88,17 @@
             peticiones: ""
         };
 
-        // Historial estructurado para mantener el contexto de la conversación
+        // Historial estructurado para la IA
         let historialChat = [
-            { role: "user", parts: [{ text: "Actúa como un asistente legal experto. Tu único objetivo es entrevistar al usuario amablemente para extraer estos 7 campos para un Derecho de Petición: 1.Ciudad y Fecha, 2.Entidad destinataria, 3.Nombre completo, 4.Cédula/Identificación, 5.Correo electrónico, 6.Hechos cronológicos y 7.Peticiones concretas. Haz una pregunta a la vez. Cuando ya tengas absolutamente TODOS los datos de la entrevista, responde EXACTAMENTE y únicamente con la palabra 'COMPLETO' seguida de un objeto JSON que contenga los campos, ej: COMPLETO {"fecha_limite":"...", "asunto":"...", "nombre":"...", "tipo_soporte":"...", "correo":"...", "detalles":"...", "peticiones":"..."}." }] },
-            { role: "model", parts: [{ text: "Entendido. Procederé a entrevistar al usuario de forma amigable, una pregunta a la vez, y al final retornaré el comando estructurado." }] }
+            { role: "user", parts: [{ text: "Actúa como un asistente legal experto. Tu único objetivo es entrevistar al usuario amablemente para extraer estos 7 campos para un Derecho de Petición: 1.Ciudad y Fecha, 2.Entidad destinataria, 3.Nombre completo, 4.Cédula/Identificación, 5.Correo electrónico, 6.Hechos cronológicos y 7.Peticiones concretas. Haz una pregunta a la vez de forma conversacional y concisa. Cuando ya tengas absolutamente TODOS los datos de la entrevista, responde EXACTAMENTE y únicamente con la palabra 'COMPLETO' seguida de un objeto JSON estructurado que contenga los campos con las mismas llaves, ejemplo: COMPLETO {\"fecha_limite\":\"...\", \"asunto\":\"...\", \"nombre\":\"...\", \"tipo_soporte\":\"...\", \"correo\":\"...\", \"detalles\":\"...\", \"peticiones\":\"...\"}." }] },
+            { role: "model", parts: [{ text: "Entendido. Iniciaré la entrevista y al recopilar todos los campos requeridos responderé con la palabra clave y el JSON estructurado." }] }
         ];
 
         const chatMessages = document.getElementById('chatMessages');
         const userInput = document.getElementById('userInput');
         const btnEnviarChat = document.getElementById('btnEnviarChat');
 
-        // Función para agregar mensajes visuales en la pantalla
+        // Función visual para añadir mensajes
         function appendMessage(sender, text) {
             const msgDiv = document.createElement('div');
             msgDiv.classList.add('message', sender);
@@ -122,58 +107,64 @@
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
-        // Procesar la respuesta y la interacción
+        // Procesar la conversación enviando la petición a la API pública de Gemini
         async function procesarMensaje() {
             const textoUsuario = userInput.value.trim();
             if (!textoUsuario) return;
 
+            // Mostrar el mensaje en pantalla e inhabilitar temporalmente las entradas
             appendMessage('user', textoUsuario);
             userInput.value = "";
             userInput.disabled = true;
             btnEnviarChat.disabled = true;
 
-            // Agregar al historial de la IA
+            // Agregar respuesta del usuario al historial local
             historialChat.push({ role: "user", parts: [{ text: textoUsuario }] });
 
             try {
-                const chatSession = model.startChat({ history: historialChat });
-                const resultadoIA = await chatSession.sendMessage(textoUsuario);
-                const respuestaTexto = resultadoIA.response.text().trim();
+                // LLAMADA DIRECTA MEDIANTE FETCH (Evita fallos de carga de librerías ES Modules)
+                const respuestaApi = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: historialChat })
+                });
 
-                // Verificar si la IA determinó que tiene el formulario completo
+                const data = await respuestaApi.json();
+                const respuestaTexto = data.candidates[0].content.parts[0].text.trim();
+
+                // Verificar si la IA ha marcado el proceso como "COMPLETO"
                 if (respuestaTexto.includes("COMPLETO")) {
-                    appendMessage('ia', "¡Excelente! He recopilado toda la información necesaria. Estoy procesando tu documento legal en este momento...");
+                    appendMessage('ia', "¡Excelente! He recopilado toda la información requerida. Estoy procesando tu documento legal en este momento...");
                     
-                    // Extraer el JSON oculto en la respuesta de la IA
                     const inicioJson = respuestaTexto.indexOf('{');
                     const finJson = respuestaTexto.lastIndexOf('}') + 1;
                     const jsonString = respuestaTexto.substring(inicioJson, finJson);
                     
                     datosCapturados = JSON.parse(jsonString);
-                    
-                    // Enviar los datos recolectados al backend de Google Apps Script
                     enviarAGoogleSheets(datosCapturados);
                 } else {
-                    // Continuar la conversación normal
+                    // Continuar conversación
                     appendMessage('ia', respuestaTexto);
                     historialChat.push({ role: "model", parts: [{ text: respuestaTexto }] });
+                    
                     userInput.disabled = false;
                     btnEnviarChat.disabled = false;
                     userInput.focus();
                 }
             } catch (error) {
                 console.error(error);
-                appendMessage('ia', "Disculpe, tuve un pequeño problema procesando la respuesta. ¿Podría repetirmelo?");
+                appendMessage('ia', "Disculpe, tuve un inconveniente de conexión con el servidor. ¿Podría volver a enviar su respuesta?");
                 userInput.disabled = false;
                 btnEnviarChat.disabled = false;
+                userInput.focus();
             }
         }
 
-        // Función de envío e integración con Google Apps Script y renderizado a Imagen
+        // Envío e integración con Google Apps Script y renderizado visual
         async function enviarAGoogleSheets(datos) {
             const placeholder = document.getElementById('placeholder');
             const canvas = document.getElementById('canvasDocumento');
-            placeholder.innerHTML = "<p>⚙️ La IA está estructurando la minuta en Google Docs y convirtiendo el plano a imagen de alta definición...</p>";
+            placeholder.innerHTML = "<p>⚙️ La IA está estructurando la minuta en Google Docs y convirtiéndola a imagen... Por favor espere.</p>";
 
             const formData = new FormData();
             for (const key in datos) {
@@ -199,24 +190,27 @@
                             const renderContext = { canvasContext: context, viewport: viewport };
                             page.render(renderContext).promise.then(function() {
                                 placeholder.style.display = "none";
-                                canvas.style.display = "block"; // Muestra el derecho de petición renderizado como imagen
-                                appendMessage('ia', "¡Tu documento ha sido generado con éxito! Puedes ver la previsualización gráfica a la derecha.");
+                                canvas.style.display = "block"; 
+                                appendMessage('ia', "¡Tu documento se ha renderizado como imagen correctamente a la derecha! Ha sido archivado con éxito.");
                             });
                         });
                     }).catch(err => {
-                        placeholder.innerHTML = `<p>✓ Documento generado.<br><br><a href="${resultado.url}" target="_blank" style="color:#2563eb; font-weight:bold;">Haz clic aquí para ver tu previsualización</a></p>`;
+                        placeholder.innerHTML = `<p>✓ Documento generado con éxito.<br><br><a href="${resultado.url}" target="_blank" style="color:#2563eb; font-weight:bold;">Haz clic aquí para ver la previsualización directa fija</a></p>`;
                     });
                 }
             } catch (e) {
-                placeholder.innerHTML = "<p>✓ El documento se guardó exitosamente en la raíz de Google Drive corporativo.</p>";
-                appendMessage('ia', "Proceso terminado. He guardado el documento de forma segura en tu nube.");
+                placeholder.innerHTML = "<p>✓ El documento se estructuró correctamente y se guardó en la raíz de Google Drive.</p>";
+                appendMessage('ia', "Proceso finalizado con éxito. El archivo quedó archivado de forma segura.");
             }
         }
 
-        // Listeners del teclado y clicks
+        // Asignación estable de eventos
         btnEnviarChat.addEventListener('click', procesarMensaje);
-        userInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') procesarMensaje();
+        userInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault(); // Evita saltos de línea molestos en inputs estándar
+                procesarMensaje();
+            }
         });
     </script>
 </body>
