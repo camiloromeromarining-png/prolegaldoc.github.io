@@ -65,11 +65,11 @@
 
     </div>
 
-    <script>
+<script>
         // ==========================================
         // CONFIGURACIÓN: COLOCA TU URL DE GOOGLE APPS SCRIPT AQUÍ
         // ==========================================
-        const URL_GOOGLE_SCRIPT = "https://script.google.com/macros/s/AKfycbw0R0_5hHntWd12DBJR8l1Cg9gHDRwxpD2-5-KiXHFDBB1X5NW6oiUfcDNcvEHCBNUqpA/exec";
+        const URL_GOOGLE_SCRIPT = "https://script.google.com/macros/s/AKfycbw0R0_5hHntWd12DBJR8l1Cg9gHDRwxpD2-5-KiXHFDBB1X5NW6oiUfcDNcvEHCBNUqpA/execI";
         // ==========================================
 
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
@@ -103,16 +103,21 @@
             historialChat.push({ role: "user", parts: [{ text: textoUsuario }] });
 
             try {
-                // Hacemos la llamada al Web App de Google Apps Script de forma segura sin CORS
+                // Realizamos el envío con modo "cors" pero procesando la respuesta de redirección de Google
                 const respuestaWeb = await fetch(URL_GOOGLE_SCRIPT, {
                     method: 'POST',
+                    mode: 'cors',
+                    headers: {
+                        'Content-Type': 'text/plain' // Evita disparar el preflight CORS complejo de navegadores
+                    },
                     body: JSON.stringify({
                         action: "chat",
                         historial: historialChat
                     })
                 });
 
-                const data = await respuestaWeb.json();
+                const textoPlano = await respuestaWeb.text();
+                const data = JSON.parse(textoPlano);
                 
                 if (data.status === "success") {
                     const respuestaTexto = data.texto.trim();
@@ -138,8 +143,11 @@
                     throw new Error(data.message);
                 }
             } catch (error) {
-                console.error(error);
-                appendMessage('ia', "Disculpe, tuve un inconveniente de conexión con el servidor. ¿Podría volver a enviar su respuesta?");
+                console.error("Detalle del error:", error);
+                
+                // Si hay un bloqueo CORS estricto local, le damos una alternativa directa al usuario
+                appendMessage('ia', "Estamos teniendo restricciones de comunicación directa con Google desde tu entorno de red. Si deseas, podemos procesar los datos de forma manual. Por favor asegúrate de que la URL de Apps Script en tu código sea idéntica a la implementada.");
+                
                 userInput.disabled = false;
                 btnEnviarChat.disabled = false;
                 userInput.focus();
@@ -154,12 +162,14 @@
             try {
                 const respuesta = await fetch(URL_GOOGLE_SCRIPT, {
                     method: 'POST',
+                    headers: { 'Content-Type': 'text/plain' },
                     body: JSON.stringify({
                         action: "generar",
                         datos: datos
                     })
                 });
-                const resultado = await respuesta.json();
+                const textoPlano = await respuesta.text();
+                const resultado = JSON.parse(textoPlano);
 
                 if(resultado.status === "success") {
                     const idArchivo = resultado.url.split('/d/')[1].split('/')[0];
