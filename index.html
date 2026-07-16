@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Asistente Legal IA - Derecho de Petición</title>
-    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <style>
         body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f6f9; color: #333; }
@@ -14,12 +13,10 @@
         
         .main-layout { max-width: 1300px; margin: 30px auto; display: flex; flex-wrap: wrap; gap: 25px; padding: 0 20px; }
         
-        /* CONTENEDOR DEL CHAT CON LA IA */
         .column-chat { flex: 1.2; min-width: 350px; background: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; flex-direction: column; height: 600px; overflow: hidden; }
         .chat-header { background-color: #1e3a8a; color: white; padding: 15px; font-weight: bold; font-size: 1.1rem; }
         .chat-messages { flex: 1; padding: 20px; overflow-y: auto; background-color: #f8fafc; display: flex; flex-direction: column; gap: 15px; }
         
-        /* Burbujas de chat */
         .message { max-width: 80%; padding: 12px 16px; border-radius: 8px; font-size: 0.95rem; line-height: 1.4; }
         .message.ia { background-color: #e2e8f0; color: #1e293b; align-self: flex-start; border-top-left-radius: 0; }
         .message.user { background-color: #2563eb; color: white; align-self: flex-end; border-top-right-radius: 0; }
@@ -29,7 +26,6 @@
         .chat-input-area button { background-color: #2563eb; color: white; border: none; padding: 0 20px; font-weight: bold; border-radius: 4px; cursor: pointer; }
         .chat-input-area button:disabled { background-color: #94a3b8; }
 
-        /* COLUMNA DE PREVISUALIZACIÓN */
         .column-preview { flex: 1; min-width: 350px; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; flex-direction: column; min-height: 600px; }
         h2 { margin-top: 0; color: #1e3a8a; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; font-size: 1.4rem; }
         .preview-container { flex: 1; border: 2px dashed #cbd5e1; border-radius: 6px; display: flex; align-items: flex-start; justify-content: center; background-color: #f8fafc; overflow: auto; padding: 10px; max-height: 520px; }
@@ -70,25 +66,14 @@
     </div>
 
     <script>
-        // CONFIGURA TU API KEY Y TU URL DE GOOGLE APPS SCRIPT AQUÍ
-        const GEMINI_API_KEY = "AQ.Ab8RN6I1dKqIa02ngE8lgo6yYsmiWlt1vQ255RHTJIQtwjnxtQ";
+        // ==========================================
+        // CONFIGURACIÓN: COLOCA TU URL DE GOOGLE APPS SCRIPT AQUÍ
+        // ==========================================
         const URL_GOOGLE_SCRIPT = "https://script.google.com/macros/s/AKfycbw0R0_5hHntWd12DBJR8l1Cg9gHDRwxpD2-5-KiXHFDBB1X5NW6oiUfcDNcvEHCBNUqpA/exec";
+        // ==========================================
 
-        // Configuración de PDF.js para renderizar el documento
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
-        // Objeto interno para almacenar datos
-        let datosCapturados = {
-            fecha_limite: "",  // Ciudad y Fecha
-            asunto: "",        // Entidad destinataria
-            nombre: "",
-            tipo_soporte: "",  // Identificación
-            correo: "",
-            detalles: "",      // Hechos
-            peticiones: ""
-        };
-
-        // Historial estructurado para la IA
         let historialChat = [
             { role: "user", parts: [{ text: "Actúa como un asistente legal experto. Tu único objetivo es entrevistar al usuario amablemente para extraer estos 7 campos para un Derecho de Petición: 1.Ciudad y Fecha, 2.Entidad destinataria, 3.Nombre completo, 4.Cédula/Identificación, 5.Correo electrónico, 6.Hechos cronológicos y 7.Peticiones concretas. Haz una pregunta a la vez de forma conversacional y concisa. Cuando ya tengas absolutamente TODOS los datos de la entrevista, responde EXACTAMENTE y únicamente con la palabra 'COMPLETO' seguida de un objeto JSON estructurado que contenga los campos con las mismas llaves, ejemplo: COMPLETO {\"fecha_limite\":\"...\", \"asunto\":\"...\", \"nombre\":\"...\", \"tipo_soporte\":\"...\", \"correo\":\"...\", \"detalles\":\"...\", \"peticiones\":\"...\"}." }] },
             { role: "model", parts: [{ text: "Entendido. Iniciaré la entrevista y al recopilar todos los campos requeridos responderé con la palabra clave y el JSON estructurado." }] }
@@ -98,7 +83,6 @@
         const userInput = document.getElementById('userInput');
         const btnEnviarChat = document.getElementById('btnEnviarChat');
 
-        // Función visual para añadir mensajes
         function appendMessage(sender, text) {
             const msgDiv = document.createElement('div');
             msgDiv.classList.add('message', sender);
@@ -107,49 +91,51 @@
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
-        // Procesar la conversación enviando la petición a la API pública de Gemini
         async function procesarMensaje() {
             const textoUsuario = userInput.value.trim();
             if (!textoUsuario) return;
 
-            // Mostrar el mensaje en pantalla e inhabilitar temporalmente las entradas
             appendMessage('user', textoUsuario);
             userInput.value = "";
             userInput.disabled = true;
             btnEnviarChat.disabled = true;
 
-            // Agregar respuesta del usuario al historial local
             historialChat.push({ role: "user", parts: [{ text: textoUsuario }] });
 
             try {
-                // LLAMADA DIRECTA MEDIANTE FETCH (Evita fallos de carga de librerías ES Modules)
-                const respuestaApi = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+                // Hacemos la llamada al Web App de Google Apps Script de forma segura sin CORS
+                const respuestaWeb = await fetch(URL_GOOGLE_SCRIPT, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: historialChat })
+                    body: JSON.stringify({
+                        action: "chat",
+                        historial: historialChat
+                    })
                 });
 
-                const data = await respuestaApi.json();
-                const respuestaTexto = data.candidates[0].content.parts[0].text.trim();
+                const data = await respuestaWeb.json();
+                
+                if (data.status === "success") {
+                    const respuestaTexto = data.texto.trim();
 
-                // Verificar si la IA ha marcado el proceso como "COMPLETO"
-                if (respuestaTexto.includes("COMPLETO")) {
-                    appendMessage('ia', "¡Excelente! He recopilado toda la información requerida. Estoy procesando tu documento legal en este momento...");
-                    
-                    const inicioJson = respuestaTexto.indexOf('{');
-                    const finJson = respuestaTexto.lastIndexOf('}') + 1;
-                    const jsonString = respuestaTexto.substring(inicioJson, finJson);
-                    
-                    datosCapturados = JSON.parse(jsonString);
-                    enviarAGoogleSheets(datosCapturados);
+                    if (respuestaTexto.includes("COMPLETO")) {
+                        appendMessage('ia', "¡Excelente! He recopilado toda la información requerida. Estoy procesando tu documento legal en este momento...");
+                        
+                        const inicioJson = respuestaTexto.indexOf('{');
+                        const finJson = respuestaTexto.lastIndexOf('}') + 1;
+                        const jsonString = respuestaTexto.substring(inicioJson, finJson);
+                        
+                        const datosCapturados = JSON.parse(jsonString);
+                        enviarAGenerarDocumento(datosCapturados);
+                    } else {
+                        appendMessage('ia', respuestaTexto);
+                        historialChat.push({ role: "model", parts: [{ text: respuestaTexto }] });
+                        
+                        userInput.disabled = false;
+                        btnEnviarChat.disabled = false;
+                        userInput.focus();
+                    }
                 } else {
-                    // Continuar conversación
-                    appendMessage('ia', respuestaTexto);
-                    historialChat.push({ role: "model", parts: [{ text: respuestaTexto }] });
-                    
-                    userInput.disabled = false;
-                    btnEnviarChat.disabled = false;
-                    userInput.focus();
+                    throw new Error(data.message);
                 }
             } catch (error) {
                 console.error(error);
@@ -160,19 +146,19 @@
             }
         }
 
-        // Envío e integración con Google Apps Script y renderizado visual
-        async function enviarAGoogleSheets(datos) {
+        async function enviarAGenerarDocumento(datos) {
             const placeholder = document.getElementById('placeholder');
             const canvas = document.getElementById('canvasDocumento');
             placeholder.innerHTML = "<p>⚙️ La IA está estructurando la minuta en Google Docs y convirtiéndola a imagen... Por favor espere.</p>";
 
-            const formData = new FormData();
-            for (const key in datos) {
-                formData.append(key, datos[key]);
-            }
-
             try {
-                const respuesta = await fetch(URL_GOOGLE_SCRIPT, { method: 'POST', body: formData });
+                const respuesta = await fetch(URL_GOOGLE_SCRIPT, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: "generar",
+                        datos: datos
+                    })
+                });
                 const resultado = await respuesta.json();
 
                 if(resultado.status === "success") {
@@ -204,11 +190,10 @@
             }
         }
 
-        // Asignación estable de eventos
         btnEnviarChat.addEventListener('click', procesarMensaje);
         userInput.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
-                e.preventDefault(); // Evita saltos de línea molestos en inputs estándar
+                e.preventDefault();
                 procesarMensaje();
             }
         });
