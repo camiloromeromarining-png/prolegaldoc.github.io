@@ -84,6 +84,7 @@ const userInput = document.getElementById('userInput');
 const btnEnviarChat = document.getElementById('btnEnviarChat');
 
 function appendMessage(sender, text) {
+    const chatMessages = document.getElementById('chat-messages');
     const msgDiv = document.createElement('div');
     msgDiv.classList.add('message', sender);
     msgDiv.innerText = text;
