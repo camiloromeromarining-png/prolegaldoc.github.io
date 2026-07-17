@@ -90,7 +90,14 @@ function appendMessage(sender, text) {
     chatMessages.appendChild(msgDiv);
     chatMessages.scrollTop = chatMessages.scrollHeight;
 }
-
+function appendHTMLMessage(sender, htmlContent) {
+    const chatMessages = document.getElementById('chat-messages'); // Asegúrate de que este ID coincida con tu contenedor de chat
+    const msgDiv = document.createElement('div');
+    msgDiv.classList.add('message', sender);
+    msgDiv.innerHTML = htmlContent; // La clave está aquí: usamos innerHTML
+    chatMessages.appendChild(msgDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
 // Función auxiliar para realizar llamadas JSONP (Inmune a CORS)
 function jsonpRequest(url, params) {
     return new Promise((resolve, reject) => {
@@ -171,46 +178,52 @@ async function procesarMensaje() {
     }
 }
 
-async function enviarAGenerarDocumento(datos) {
-    const placeholder = document.getElementById('placeholder');
-    const canvas = document.getElementById('canvasDocumento');
-    placeholder.innerHTML = "<p>⚙️ La IA está estructurando la minuta en Google Docs y convirtiéndola a imagen... Por favor espere.</p>";
-
+async function enviarAGenerarDocumento(datosParaDocumento) {
     try {
-        const resultado = await jsonpRequest(URL_GOOGLE_SCRIPT, {
+        appendMessage('ia', "⏳ Creando el documento oficial y generando la vista previa...");
+
+        // Llamamos a Apps Script para generar el PDF
+        const data = await jsonpRequest(URL_GOOGLE_SCRIPT, {
             action: "generar",
-            datos: JSON.stringify(datos)
+            datos: JSON.stringify(datosParaDocumento)
         });
 
-        if(resultado.status === "success") {
-            const idArchivo = resultado.url.split('/d/')[1].split('/')[0];
-            const urlDescargaDirecta = `https://docs.google.com/uc?export=download&id=${idArchivo}`;
+        if (data && data.status === "success") {
+            // Construimos la tarjeta visual con la imagen y el botón
+            const tarjetaDocumentoHTML = `
+                <div style="text-align: center; margin-top: 10px; font-family: sans-serif;">
+                    <h4 style="color: #2e7d32; margin-bottom: 15px;">¡Documento Generado Exitosamente!</h4>
+                    
+                    <!-- IMAGEN DE VISTA PREVIA -->
+                    <div style="box-shadow: 0 4px 8px rgba(0,0,0,0.1); border: 1px solid #ddd; border-radius: 8px; display: inline-block; padding: 5px; background: white; margin-bottom: 15px;">
+                        <img src="${data.urlImagen}" alt="Vista previa" style="max-width: 100%; width: 280px; height: auto; border-radius: 4px; display: block;">
+                    </div>
+                    
+                    <br>
+                    
+                    <!-- BOTÓN DE DESCARGA -->
+                    <a href="${data.urlDescarga}" target="_blank" style="background-color: #1a73e8; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 14px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                        📄 Descargar / Imprimir PDF
+                    </a>
+                </div>
+            `;
+            
+            // Usamos la nueva función para inyectar el HTML en el chat
+            appendHTMLMessage('ia', tarjetaDocumentoHTML);
+            
+            // Rehabilitamos el input por si quiere hacer otro documento
+            userInput.disabled = false;
+            btnEnviarChat.disabled = false;
+            userInput.focus();
 
-            const cargandoPdf = pdfjsLib.getDocument(urlDescargaDirecta);
-            cargandoPdf.promise.then(function(pdf) {
-                pdf.getPage(1).then(function(page) {
-                    const viewport = page.getViewport({ scale: 1.5 });
-                    const context = canvas.getContext('2d');
-                    canvas.height = viewport.height;
-                    canvas.width = viewport.width;
-
-                    const renderContext = { canvasContext: context, viewport: viewport };
-                    page.render(renderContext).promise.then(function() {
-                        placeholder.style.display = "none";
-                        canvas.style.display = "block"; 
-                        appendMessage('ia', "¡Tu documento se ha renderizado como imagen correctamente a la derecha! Ha sido archivado con éxito.");
-                    });
-                });
-            }).catch(err => {
-                placeholder.innerHTML = `<p>✓ Documento generado con éxito.<br><br><a href="${resultado.url}" target="_blank" style="color:#2563eb; font-weight:bold;">Haz clic aquí para ver la previsualización directa fija</a></p>`;
-            });
+        } else {
+            appendMessage('ia', "❌ Hubo un error al generar el archivo: " + (data.message || "Error desconocido"));
         }
-    } catch (e) {
-        placeholder.innerHTML = "<p>✓ El documento se estructuró correctamente y se guardó en la raíz de Google Drive.</p>";
-        appendMessage('ia', "Proceso finalizado con éxito. El archivo quedó archivado de forma segura.");
+    } catch (error) {
+        console.error("Error al generar:", error);
+        appendMessage('ia', "❌ Falló la conexión al crear el documento. Intenta nuevamente.");
     }
 }
-
 btnEnviarChat.addEventListener('click', procesarMensaje);
 userInput.addEventListener('keydown', function(e) {
     if (e.key === 'Enter') {
