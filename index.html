@@ -92,10 +92,10 @@ function appendMessage(sender, text) {
     chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 function appendHTMLMessage(sender, htmlContent) {
-    const chatMessages = document.getElementById('chat-messages'); // Asegúrate de que este ID coincida con tu contenedor de chat
+    const chatMessages = document.getElementById('chat-messages');
     const msgDiv = document.createElement('div');
     msgDiv.classList.add('message', sender);
-    msgDiv.innerHTML = htmlContent; // La clave está aquí: usamos innerHTML
+    msgDiv.innerHTML = htmlContent; // Inyecta el HTML (para imágenes/botones)
     chatMessages.appendChild(msgDiv);
     chatMessages.scrollTop = chatMessages.scrollHeight;
 }
