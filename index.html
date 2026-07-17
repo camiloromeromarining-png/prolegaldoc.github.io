@@ -69,7 +69,7 @@
 // ==========================================
 // CONFIGURACIÓN: COLOCA TU URL DE GOOGLE APPS SCRIPT AQUÍ
 // ==========================================
-const URL_GOOGLE_SCRIPT = "https://script.google.com/macros/s/AKfycbw0R0_5hHntWd12DBJR8l1Cg9gHDRwxpD2-5-KiXHFDBB1X5NW6oiUfcDNcvEHCBNUqpA/exec";
+// const URL_GOOGLE_SCRIPT = "https://script.google.com/macros/s/AKfycbw0R0_5hHntWd12DBJR8l1Cg9gHDRwxpD2-5-KiXHFDBB1X5NW6oiUfcDNcvEHCBNUqpA/exec";
 // ==========================================
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
@@ -99,28 +99,28 @@ function appendHTMLMessage(sender, htmlContent) {
     chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 // Función auxiliar para realizar llamadas JSONP (Inmune a CORS)
-function jsonpRequest(url, params) {
-    return new Promise((resolve, reject) => {
-        const callbackName = 'googleCallback_' + Math.round(100000 * Math.random());
-        window[callbackName] = function(data) {
-            delete window[callbackName];
-            document.body.removeChild(script);
-            resolve(data);
-        };
-
-        const queryParams = new URLSearchParams(params);
-        queryParams.append('callback', callbackName);
-
-        const script = document.createElement('script');
-        script.src = url + '?' + queryParams.toString();
-        script.onerror = function() {
-            delete window[callbackName];
-            document.body.removeChild(script);
-            reject(new Error("Error de carga de script de red."));
-        };
-        document.body.appendChild(script);
-    });
-}
+//function jsonpRequest(url, params) {
+//    return new Promise((resolve, reject) => {
+//        const callbackName = 'googleCallback_' + Math.round(100000 * Math.random());
+//        window[callbackName] = function(data) {
+//            delete window[callbackName];
+//            document.body.removeChild(script);
+//            resolve(data);
+//        };
+//
+//        const queryParams = new URLSearchParams(params);
+//        queryParams.append('callback', callbackName);
+//
+//        const script = document.createElement('script');
+//        script.src = url + '?' + queryParams.toString();
+//        script.onerror = function() {
+//            delete window[callbackName];
+//            document.body.removeChild(script);
+//            reject(new Error("Error de carga de script de red."));
+//        };
+//        document.body.appendChild(script);
+//    });
+//}
 
 // CONFIGURACIÓN DE GROQ - Pon tu API Key aquí
 const GROQ_API_KEY = "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"; 
