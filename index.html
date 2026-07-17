@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Asistente Legal IA - Derecho de Petición</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <!-- Importar la librería para generación de PDFs de forma local -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f6f9; color: #333; }
         .banner { background: linear-gradient(135deg, #1e3a8a, #0f172a); color: white; text-align: center; padding: 30px 20px; }
@@ -72,7 +74,7 @@
 // const URL_GOOGLE_SCRIPT = "https://script.google.com/macros/s/AKfycbw0R0_5hHntWd12DBJR8l1Cg9gHDRwxpD2-5-KiXHFDBB1X5NW6oiUfcDNcvEHCBNUqpA/exec";
 // ==========================================
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+//pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
 let historialChat = [
     { role: "user", parts: [{ text: "Actúa como un asistente legal experto. Tu único objetivo es entrevistar al usuario amablemente para extraer estos 7 campos para un Derecho de Petición: 1.Ciudad y Fecha, 2.Entidad destinataria, 3.Nombre completo, 4.Cédula/Identificación, 5.Correo electrónico, 6.Hechos cronológicos y 7.Peticiones concretas. Haz una pregunta a la vez de forma conversacional y concisa. Cuando ya tengas absolutamente TODOS los datos de la entrevista, responde EXACTAMENTE y únicamente con la palabra 'COMPLETO' seguida de un objeto JSON estructurado que contenga los campos con las mismas llaves, ejemplo: COMPLETO {\"fecha_limite\":\"...\", \"asunto\":\"...\", \"nombre\":\"...\", \"tipo_soporte\":\"...\", \"correo\":\"...\", \"detalles\":\"...\", \"peticiones\":\"...\"}." }] },
@@ -127,6 +129,15 @@ function appendHTMLMessage(sender, htmlContent) {
 const GROQ_API_KEY = "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"; 
 const MODELO_GROQ = "llama-3.1-8b-instant";
 
+// Validación automática de la librería al cargar la página
+window.addEventListener('DOMContentLoaded', () => {
+    if (typeof html2pdf === 'undefined') {
+        console.error("❌ Alerta: La librería html2pdf.js NO se ha cargado correctamente en el navegador.");
+    } else {
+        console.log("✅ Éxito: La librería html2pdf.js está cargada y lista para usarse.");
+    }
+});
+    
 async function procesarMensaje() {
     const textoUsuario = userInput.value.trim();
     if (!textoUsuario) return;
