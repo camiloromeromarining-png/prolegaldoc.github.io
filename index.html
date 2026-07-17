@@ -348,5 +348,49 @@ userInput.addEventListener('keydown', function(e) {
     }
 });
 </script>
+    <!-- PLANTILLA OCULTA PARA GENERAR EL PDF -->
+<div id="plantilla-peticion" style="display: none; font-family: 'Arial', sans-serif; line-height: 1.6; color: #000; padding: 40px; background: white; width: 215.9mm; min-height: 279.4mm; box-sizing: border-box;">
+    
+    <p style="text-align: right; font-weight: bold;" id="pdf-fecha">Bogotá D.C., </p>
+    
+    <br>
+    <p style="font-weight: bold;">Señores:</p>
+    <p style="font-weight: bold; text-transform: uppercase;" id="pdf-entidad">ENTIDAD DESTINATARIA</p>
+    <p>E. S. D.</p>
+    
+    <br><br>
+    <h3 style="text-align: center; font-weight: bold; text-decoration: underline;">ASUNTO: DERECHO DE PETICIÓN EN INTERÉS PARTICULAR</h3>
+    
+    <br>
+    <p>
+        Yo, <span id="pdf-nombre" style="font-weight: bold; text-transform: uppercase;">[Nombre Completo]</span>, 
+        identificado(a) con la Cédula de Ciudadanía número <span id="pdf-identificacion" style="font-weight: bold;">[Identificación]</span>, 
+        actuando en ejercicio del derecho constitucional consagrado en el Artículo 23 de la Constitución Política de Colombia, 
+        así como en las disposiciones de la Ley 1755 de 2015, presento ante ustedes de manera respetuosa la siguiente solicitud con fundamento en los siguientes:
+    </p>
+    
+    <br>
+    <h4 style="font-weight: bold; border-bottom: 1px solid #000; padding-bottom: 3px;">I. HECHOS</h4>
+    <p id="pdf-hechos" style="text-align: justify; white-space: pre-line;">[Aquí se detallarán los hechos recopilados por la IA...]</p>
+    
+    <br>
+    <h4 style="font-weight: bold; border-bottom: 1px solid #000; padding-bottom: 3px;">II. PETICIONES</h4>
+    <p id="pdf-peticiones" style="text-align: justify; white-space: pre-line;">[Aquí se detallarán las peticiones recopiladas por la IA...]</p>
+    
+    <br>
+    <h4 style="font-weight: bold; border-bottom: 1px solid #000; padding-bottom: 3px;">III. NOTIFICACIONES</h4>
+    <p>
+        Para efectos de recibir correspondencia, respuesta y cualquier notificación relacionada con el trámite de esta petición, 
+        señalo expresamente la siguiente dirección de correo electrónico: <strong id="pdf-correo">[Correo]</strong>.
+    </p>
+    
+    <br><br><br>
+    <p>Cordialmente,</p>
+    
+    <br><br>
+    <p style="margin-bottom: 5px;">_________________________________________</p>
+    <p style="font-weight: bold; margin: 0; text-transform: uppercase;" id="pdf-firma-nombre">[Firma Nombre]</p>
+    <p style="margin: 0;" id="pdf-firma-id">C.C. </p>
+</div>
 </body>
 </html>
