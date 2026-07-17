@@ -84,7 +84,7 @@ const userInput = document.getElementById('userInput');
 const btnEnviarChat = document.getElementById('btnEnviarChat');
 
 function appendMessage(sender, text) {
-    const chatMessages = document.getElementById('chat-messages');
+    const chatMessages = document.getElementById('chatMessages');
     const msgDiv = document.createElement('div');
     msgDiv.classList.add('message', sender);
     msgDiv.innerText = text;
@@ -92,7 +92,7 @@ function appendMessage(sender, text) {
     chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 function appendHTMLMessage(sender, htmlContent) {
-    const chatMessages = document.getElementById('chat-messages');
+    const chatMessages = document.getElementById('chatMessages');
     const msgDiv = document.createElement('div');
     msgDiv.classList.add('message', sender);
     msgDiv.innerHTML = htmlContent; // Inyecta el HTML (para imágenes/botones)
