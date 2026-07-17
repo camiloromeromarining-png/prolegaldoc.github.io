@@ -122,62 +122,103 @@ function jsonpRequest(url, params) {
     });
 }
 
+// CONFIGURACIÓN DE GROQ - Pon tu API Key aquí
+const GROQ_API_KEY = "PEGA_AQUÍ_TU_API_KEY_DE_GROQ"; 
+const MODELO_GROQ = "llama-3.1-8b-instant";
+
 async function procesarMensaje() {
     const textoUsuario = userInput.value.trim();
     if (!textoUsuario) return;
 
+    // 1. Mostrar mensaje del usuario en el chat
     appendMessage('user', textoUsuario);
     userInput.value = "";
     userInput.disabled = true;
     btnEnviarChat.disabled = true;
 
-    historialChat.push({ role: "user", parts: [{ text: textoUsuario }] });
+    // 2. Almacenar el mensaje en el historial del chat
+    historialChat.push({ role: "user", content: textoUsuario });
+
+    // 3. Limitar historial a los últimos 6 mensajes para optimizar uso de tokens
+    const historialAcotado = historialChat.slice(-6);
+
+    // 4. Agregar indicador temporal de que la IA está escribiendo
+    const cargandoDiv = document.createElement('div');
+    cargandoDiv.id = "temp-cargando";
+    cargandoDiv.classList.add('message', 'ia');
+    cargandoDiv.style.fontStyle = "italic";
+    cargandoDiv.style.opacity = "0.7";
+    cargandoDiv.innerText = "Escribiendo respuesta...";
+    document.getElementById('chat-messages').appendChild(cargandoDiv);
 
     try {
-        // Petición de red asíncrona JSONP
-        const data = await jsonpRequest(URL_GOOGLE_SCRIPT, {
-            action: "chat",
-            historial: JSON.stringify(historialChat)
+        // Petición directa a la API de Groq
+        const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${GROQ_API_KEY}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                model: MODELO_GROQ,
+                messages: [
+                    // System Prompt para darle contexto al modelo
+                    { 
+                        role: "system", 
+                        content: "Eres un asistente legal experto en la legislación colombiana. Tu objetivo es guiar cordialmente al usuario en el chat para recolectar sus datos y redactar un Derecho de Petición. Cuando tengas TODOS los datos necesarios (Nombre, Identificación, Entidad, Hechos, Peticiones y Correo), debes responder únicamente con un objeto JSON plano que contenga estas llaves: {'nombre':'...','identificacion':'...','asunto':'...','hechos':'...','peticiones':'...','correo':'...'} y agregar la palabra 'COMPLETO' al inicio de tu respuesta." 
+                    },
+                    ...historialAcotado
+                ],
+                temperature: 0.3
+            })
         });
 
-        // Verificamos que la respuesta del servidor de Google haya sido exitosa
-        if (data && data.status === "success") {
-            const respuestaTexto = data.texto.trim();
+        // Remover el indicador de carga
+        const tempCargando = document.getElementById('temp-cargando');
+        if (tempCargando) tempCargando.remove();
 
-            if (respuestaTexto.includes("COMPLETO")) {
-                appendMessage('ia', "¡Excelente! He recopilado toda la información requerida. Estoy procesando tu documento legal en este momento...");
-                
-                const inicioJson = respuestaTexto.indexOf('{');
-                const finJson = respuestaTexto.lastIndexOf('}') + 1;
-                const jsonString = respuestaTexto.substring(inicioJson, finJson);
-                
-                const datosCaptured = JSON.parse(jsonString);
-                enviarAGenerarDocumento(datosCaptured);
-            } else {
-                appendMessage('ia', respuestaTexto);
-                historialChat.push({ role: "model", parts: [{ text: respuestaTexto }] });
-                
-                userInput.disabled = false;
-                btnEnviarChat.disabled = false;
-                userInput.focus();
-            }
-        } else {
-            // Si el backend reportó un error controlado (ej: Clave de API inválida)
-            const mensajeError = data && data.texto ? data.texto : "Error desconocido en el servidor de Google.";
-            throw new Error(mensajeError);
+        if (!response.ok) {
+            throw new Error(`Error en el servidor de Groq: ${response.statusText}`);
         }
+
+        const data = await response.json();
+        const respuestaTexto = data.choices[0].message.content.trim();
+
+        // 5. Evaluar si la IA determinó que completó el formulario
+        if (respuestaTexto.includes("COMPLETO")) {
+            appendMessage('ia', "⚡ ¡Excelente! He recopilado toda la información requerida. Generando tu Derecho de Petición ahora mismo de forma local...");
+            
+            // Extraer el objeto JSON de la respuesta
+            const inicioJson = respuestaTexto.indexOf('{');
+            const finJson = respuestaTexto.lastIndexOf('}') + 1;
+            const jsonString = respuestaTexto.substring(inicioJson, finJson);
+            
+            const datosFinales = JSON.parse(jsonString);
+            
+            // Llamamos a la función local para crear el PDF en el navegador
+            enviarAGenerarDocumento(datosFinales); 
+        } else {
+            // Guardamos la respuesta normal en pantalla e historial
+            appendMessage('ia', respuestaTexto);
+            historialChat.push({ role: "assistant", content: respuestaTexto });
+            
+            userInput.disabled = false;
+            btnEnviarChat.disabled = false;
+            userInput.focus();
+        }
+
     } catch (error) {
-        console.error("Detalle del error:", error);
-        
-        // Mostramos el diagnóstico exacto en el chat para que sepas qué corregir
-        appendMessage('ia', `⚠️ Ocurrió un error al procesar tu mensaje. Diagnóstico técnico: ${error.message}`);
+        console.error("Error llamando a Groq:", error);
+        const tempCargando = document.getElementById('temp-cargando');
+        if (tempCargando) tempCargando.remove();
+
+        appendMessage('ia', "⚠️ Ocurrió un problema de comunicación con el motor de IA. Por favor, reintenta enviar tu respuesta.");
         
         userInput.disabled = false;
         btnEnviarChat.disabled = false;
         userInput.focus();
     }
 }
-
 async function enviarAGenerarDocumento(datosParaDocumento) {
     try {
         appendMessage('ia', "⏳ Creando el documento oficial y generando la vista previa...");
