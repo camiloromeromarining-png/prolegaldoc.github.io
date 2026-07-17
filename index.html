@@ -142,11 +142,16 @@ async function procesarMensaje() {
     // 2. Almacenar asegurando un formato limpio (solo role y content)
     historialChat.push({ role: "user", content: textoUsuario });
 
-    // 3. Tomar los últimos 6 mensajes y formatearlos estrictamente para Groq
-    const historialLimpio = historialChat.slice(-6).map(msg => ({
-        role: msg.role === 'ia' ? 'assistant' : msg.role, // Groq usa 'assistant' en lugar de 'ia'
-        content: msg.content
-    }));
+    // 3. Tomar los últimos 6 mensajes y formatearlos de manera ULTRA-ESTRICTA para Groq
+    const historialLimpio = historialChat.slice(-6).map(msg => {
+        // Aseguramos el contenido buscando cualquier variante donde pueda estar el texto
+        const contenidoSeguro = msg.content || msg.text || msg.message || "";
+        
+        return {
+            role: msg.role === 'ia' ? 'assistant' : 'user', // Forzamos a que solo existan estos dos roles
+            content: String(contenidoSeguro).trim() // Nos aseguramos de que sea un texto limpio
+        };
+    }).filter(msg => msg.content !== ""); // 👈 ELIMINA del historial cualquier mensaje que haya quedado vacío por error
 
     // 4. Agregar indicador temporal
     const cargandoDiv = document.createElement('div');
