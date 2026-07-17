@@ -252,48 +252,92 @@ async function procesarMensaje() {
 }
 async function enviarAGenerarDocumento(datosParaDocumento) {
     try {
-        appendMessage('ia', "⏳ Creando el documento oficial y generando la vista previa...");
+        appendMessage('ia', "⚡ Generando tu Derecho de Petición directamente en tu navegador...");
 
-        // Llamamos a Apps Script para generar el PDF
-        const data = await jsonpRequest(URL_GOOGLE_SCRIPT, {
-            action: "generar",
-            datos: JSON.stringify(datosParaDocumento)
-        });
+        // 1. Obtener la plantilla oculta del HTML
+        const plantilla = document.getElementById('plantilla-peticion');
+        if (!plantilla) {
+            throw new Error("No se encontró la plantilla HTML con ID 'plantilla-peticion'");
+        }
+        
+        // 2. Rellenar los campos con los datos capturados por el chat
+        const fechaActual = new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' });
+        document.getElementById('pdf-fecha').innerText = `Bogotá D.C., ${fechaActual}`;
+        document.getElementById('pdf-entidad').innerText = datosParaDocumento.asunto || "Entidad Correspondiente";
+        document.getElementById('pdf-nombre').innerText = datosParaDocumento.nombre;
+        document.getElementById('pdf-identificacion').innerText = datosParaDocumento.identificacion;
+        document.getElementById('pdf-hechos').innerText = datosParaDocumento.hechos;
+        document.getElementById('pdf-peticiones').innerText = datosParaDocumento.peticiones;
+        document.getElementById('pdf-correo').innerText = datosParaDocumento.correo;
+        
+        // Rellenar firma
+        document.getElementById('pdf-firma-nombre').innerText = datosParaDocumento.nombre;
+        document.getElementById('pdf-firma-id').innerText = `C.C. ${datosParaDocumento.identificacion}`;
 
-        if (data && data.status === "success") {
-            // Construimos la tarjeta visual con la imagen y el botón
-            const tarjetaDocumentoHTML = `
+        // 3. Mostrar temporalmente la plantilla para que la librería html2pdf pueda renderizarla
+        plantilla.style.display = 'block';
+
+        // 4. Configuración del formato del PDF (Márgenes de 1.5 cm estándar)
+        const opciones = {
+            margin: 15,
+            filename: `Derecho_de_Peticion_${datosParaDocumento.nombre.replace(/\s+/g, '_')}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true },
+            jsPDF: { unit: 'mm', format: 'letter', orientation: 'portrait' } // Formato Carta oficial
+        };
+
+        // 5. Generar el PDF localmente y obtener el archivo en formato URI de datos base64
+        html2pdf().set(opciones).from(plantilla).toPdf().output('datauristring').then(function (pdfBase64) {
+            
+            // Ocultamos la plantilla de nuevo para que no estorbe visualmente en la web
+            plantilla.style.display = 'none';
+
+            // 6. Construir y enviar la tarjeta interactiva al chat
+            const tarjetaHTML = `
                 <div style="text-align: center; margin-top: 10px; font-family: sans-serif;">
-                    <h4 style="color: #2e7d32; margin-bottom: 15px;">¡Documento Generado Exitosamente!</h4>
+                    <h4 style="color: #2e7d32; margin-bottom: 10px;">¡Documento Generado Exitosamente!</h4>
+                    <p style="font-size: 13px; color: #555; margin-bottom: 15px;">Hemos procesado tu Derecho de Petición de forma 100% local y segura.</p>
                     
-                    <!-- IMAGEN DE VISTA PREVIA -->
-                    <div style="box-shadow: 0 4px 8px rgba(0,0,0,0.1); border: 1px solid #ddd; border-radius: 8px; display: inline-block; padding: 5px; background: white; margin-bottom: 15px;">
-                        <img src="${data.urlImagen}" alt="Vista previa" style="max-width: 100%; width: 280px; height: auto; border-radius: 4px; display: block;">
+                    <!-- VISTA PREVIA INTERACTIVA -->
+                    <div style="box-shadow: 0 4px 12px rgba(0,0,0,0.15); border: 1px solid #ccc; border-radius: 8px; display: inline-block; padding: 5px; background: white; margin-bottom: 15px; max-width: 100%;">
+                        <iframe src="${pdfBase64}#toolbar=0&navpanes=0" style="width: 320px; height: 400px; border: none; border-radius: 4px; display: block;"></iframe>
                     </div>
                     
                     <br>
                     
-                    <!-- BOTÓN DE DESCARGA -->
-                    <a href="${data.urlDescarga}" target="_blank" style="background-color: #1a73e8; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 14px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-                        📄 Descargar / Imprimir PDF
-                    </a>
+                    <!-- BOTÓN DE DESCARGA DIRECTA -->
+                    <button onclick="descargarPDFLocal()" style="cursor: pointer; background-color: #1a73e8; color: white; padding: 12px 24px; border: none; border-radius: 4px; font-weight: bold; font-size: 14px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                        📥 Descargar PDF Creado
+                    </button>
                 </div>
             `;
+
+            // Definimos la función de descarga para el botón
+            window.descargarPDFLocal = function() {
+                plantilla.style.display = 'block';
+                html2pdf().set(opciones).from(plantilla).save().then(() => {
+                    plantilla.style.display = 'none';
+                });
+            };
+
+            // Publicamos la tarjeta gráfica en el chat
+            appendHTMLMessage('ia', tarjetaHTML);
             
-            // Usamos la nueva función para inyectar el HTML en el chat
-            appendHTMLMessage('ia', tarjetaDocumentoHTML);
-            
-            // Rehabilitamos el input por si quiere hacer otro documento
+            // Rehabilitar controles de entrada del chat
             userInput.disabled = false;
             btnEnviarChat.disabled = false;
             userInput.focus();
+        });
 
-        } else {
-            appendMessage('ia', "❌ Hubo un error al generar el archivo: " + (data.message || "Error desconocido"));
-        }
     } catch (error) {
-        console.error("Error al generar:", error);
-        appendMessage('ia', "❌ Falló la conexión al crear el documento. Intenta nuevamente.");
+        console.error("Error al generar PDF:", error);
+        appendMessage('ia', "❌ Ocurrió un error inesperado al procesar tu documento de manera local: " + error.message);
+        const plantilla = document.getElementById('plantilla-peticion');
+        if (plantilla) plantilla.style.display = 'none';
+        
+        userInput.disabled = false;
+        btnEnviarChat.disabled = false;
+        userInput.focus();
     }
 }
 btnEnviarChat.addEventListener('click', procesarMensaje);
