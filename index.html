@@ -200,18 +200,19 @@ async function procesarMensaje() {
                         2. Solicita la información DE UNA EN UNA (un dato por mensaje). NUNCA hagas dos o más preguntas en el mismo mensaje.
                         3. Valida o reacciona brevemente y con empatía a la respuesta anterior del usuario antes de pedir el siguiente dato (por ejemplo: "Entendido, Camilo.", "Perfecto, ya registré tu cédula.").
                         4. El orden sugerido para pedir los datos es:
-                           a. Nombre completo.
-                           b. Tipo y número de identificación (cédula).
-                           c. Nombre de la entidad o persona a la que va dirigido (Asunto/Entidad).
-                           d. Los Hechos (qué ocurrió, de forma clara).
-                           e. Las Peticiones (qué solicita exactamente a la entidad).
-                           f. Correo electrónico para notificaciones.
+                           a. Ciudad.
+                           b. Nombre completo.
+                           c. Tipo y número de identificación (cédula).
+                           d. Nombre de la entidad o persona a la que va dirigido (Asunto/Entidad).
+                           e. Los Hechos (qué ocurrió, de forma clara).
+                           f. Las Peticiones (qué solicita exactamente a la entidad).
+                           g. Correo electrónico para notificaciones.
                         5. Cuando tengas absolutamente TODOS estos 6 datos recopilados, no pidas nada más. Genera la respuesta de cierre inmediatamente.
                 
                         INSTRUCCIÓN DE CIERRE (MÁXIMA PRIORIDAD):
                         Únicamente cuando ya tengas todos los datos completos, debes responder iniciando tu mensaje EXACTAMENTE con la palabra "COMPLETO" seguido de un objeto JSON plano con la información.
                         Ejemplo de formato de cierre:
-                        COMPLETO {"nombre":"Juan Pérez","identificacion":"C.C. 1.010.123.456","asunto":"Vanti S.A. ESP","hechos":"El día 5 de mayo se presentó una suspensión del servicio...","peticiones":"Solicito la reconexión inmediata del servicio...","correo":"juan.perez@email.com"}` 
+                        COMPLETO {"ciudad":"Bogotá D.C","nombre":"Juan Pérez","identificacion":"C.C. 1.010.123.456","asunto":"Vanti S.A. ESP","hechos":"El día 5 de mayo se presentó una suspensión del servicio...","peticiones":"Solicito la reconexión inmediata del servicio...","correo":"juan.perez@email.com"}` 
                     },
                     ...historialLimpio
                 ],
@@ -279,6 +280,7 @@ async function enviarAGenerarDocumento(datosParaDocumento) {
         
         // 3. Rellenar los campos con los datos capturados por el chat
         const fechaActual = new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' });
+        document.getElementById('pdf-ciudad').innerText = datosParaDocumento.ciudad;
         document.getElementById('pdf-fecha').innerText = `Bogotá D.C., ${fechaActual}`;
         document.getElementById('pdf-entidad').innerText = datosParaDocumento.asunto || "Entidad Correspondiente";
         document.getElementById('pdf-nombre').innerText = datosParaDocumento.nombre;
@@ -370,7 +372,7 @@ userInput.addEventListener('keydown', function(e) {
     <!-- PLANTILLA OCULTA PARA GENERAR EL PDF -->
 <div id="plantilla-peticion" style="display: none; font-family: 'Arial', sans-serif; line-height: 1.6; color: #000; padding: 40px; background: white; width: 215.9mm; min-height: 279.4mm; box-sizing: border-box;">
     
-    <p style="text-align: right; font-weight: bold;" id="pdf-fecha">Bogotá D.C., </p>
+    <p style="text-align: left; font-weight: bold;" id="pdf-fecha"><strong id="pdf-ciudad">[Ciudad]</strong></p>
     
     <br>
     <p style="font-weight: bold;">Señores:</p>
