@@ -60,7 +60,28 @@
 
 </head>
 <body>
+<!-- PANTALLA DE INICIO / BIENVENIDA -->
+<div id="pantalla-inicio" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: linear-gradient(135deg, #0f2027, #203a43, #2c5364); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; padding: 20px; box-sizing: border-box;">
+    
+    <div style="max-width: 600px; background: rgba(255, 255, 255, 0.06); padding: 40px; border-radius: 16px; backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);">
+        <div style="font-size: 60px; margin-bottom: 20px;">⚖️</div>
+        <h1 style="margin: 0 0 10px 0; font-size: 2.5rem; font-weight: 700; letter-spacing: -0.5px;">ProLegalDoc</h1>
+        <p style="margin: 0 0 30px 0; font-size: 1.1rem; color: #b0bec5; line-height: 1.6;">
+            Genera tus Derechos de Petición en Colombia de forma gratuita, segura y guiada por Inteligencia Artificial. Sin intermediarios y en pocos minutos.
+        </p>
+        
+        <!-- BOTÓN DE CONEXIÓN -->
+        <button id="btn-comenzar" style="background: #2e7d32; color: white; border: none; padding: 16px 36px; font-size: 1.1rem; font-weight: bold; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(46, 125, 50, 0.4);">
+            🚀 Comenzar Asesoría Virtual
+        </button>
 
+        <div style="margin-top: 30px; font-size: 0.85rem; color: #78909c; display: flex; justify-content: center; gap: 20px;">
+            <span>✓ 100% Gratuito</span>
+            <span>✓ Conforme a la Ley 1755 de 2015</span>
+            <span>✓ Procesamiento Seguro</span>
+        </div>
+    </div>
+</div>
     <header class="banner">
         <h1>Asistente Legal Inteligente</h1>
         <p>Converse con nuestra IA para estructurar formalmente su Derecho de Petición.</p>
@@ -404,6 +425,39 @@ userInput.addEventListener('keydown', function(e) {
     if (e.key === 'Enter') {
         e.preventDefault();
         procesarMensaje();
+    }
+});
+document.addEventListener('DOMContentLoaded', () => {
+    const pantallaInicio = document.getElementById('pantalla-inicio');
+    const btnComenzar = document.getElementById('btn-comenzar');
+
+    // Efecto visual al pasar el mouse por el botón (Hover)
+    if (btnComenzar) {
+        btnComenzar.addEventListener('mouseenter', () => {
+            btnComenzar.style.background = '#388e3c';
+            btnComenzar.style.transform = 'translateY(-2px)';
+        });
+        btnComenzar.addEventListener('mouseleave', () => {
+            btnComenzar.style.background = '#2e7d32';
+            btnComenzar.style.transform = 'translateY(0)';
+        });
+
+        // ⚡ CONEXIÓN DE LA PANTALLA DE INICIO AL GENERADOR
+        btnComenzar.addEventListener('click', () => {
+            // Añadimos una transición de desvanecimiento
+            pantallaInicio.style.transition = 'opacity 0.5s ease, visibility 0.5s';
+            pantallaInicio.style.opacity = '0';
+            pantallaInicio.style.visibility = 'hidden';
+
+            // Quitamos el div por completo del flujo después de la animación para ahorrar memoria
+            setTimeout(() => {
+                pantallaInicio.remove();
+            }, 500);
+
+            // OPCIONAL: Si deseas que el bot salude inmediatamente al entrar, 
+            // puedes llamar aquí a la función encargada del saludo inicial automático.
+            console.log("Generador de Derechos de Petición activado.");
+        });
     }
 });
 </script>
