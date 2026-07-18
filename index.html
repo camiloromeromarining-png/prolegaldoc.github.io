@@ -34,6 +34,23 @@
         canvas { width: 100%; height: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.15); display: none; background: white; }
         .placeholder-text { color: #64748b; text-align: center; padding: 30px; align-self: center; }
     </style>
+    .preview-container {
+    background-color: #f5f5f5;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px dashed #ccc;
+    max-height: 80vh; /* Controla la altura máxima para activar barra de scroll si es largo */
+    overflow-y: auto;  /* Permite desplazar verticalmente el documento si tiene varias páginas */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    }
+    
+    #canvasDocumento {
+        display: none; /* Se mantiene oculto hasta que la IA termine */
+        box-shadow: 0 4px 10px rgba(0,0,0,0.15); /* Sombra elegante estilo hoja de papel */
+        background: white;
+    }
 </head>
 <body>
 
