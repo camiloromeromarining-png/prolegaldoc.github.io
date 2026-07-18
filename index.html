@@ -264,23 +264,20 @@ async function procesarMensaje() {
 }
 async function enviarAGenerarDocumento(datosParaDocumento) {
     try {
-        appendMessage('ia', "⚡ Generando tu Derecho de Petición directamente en tu navegador...");
+        appendMessage('ia', "⚡ Generando tu Derecho de Petición y actualizando tu panel lateral...");
 
-        // 1. Validar y obtener de forma segura la librería html2pdf
         const generadorPdf = window.html2pdf || html2pdf;
         if (typeof generadorPdf === 'undefined') {
-            throw new Error("La biblioteca de PDFs no se cargó a tiempo en tu navegador. Por favor, refresca la página e inténtalo de nuevo.");
+            throw new Error("La biblioteca de PDFs no está lista.");
         }
 
-        // 2. Obtener la plantilla oculta
         const plantilla = document.getElementById('plantilla-peticion');
         if (!plantilla) {
             throw new Error("No se encontró la plantilla HTML con ID 'plantilla-peticion'");
         }
         
-        // 3. Rellenar los campos con los datos capturados por el chat
+        // 1. Rellenar los campos con los datos capturados
         const fechaActual = new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' });
-        document.getElementById('pdf-ciudad').innerText = datosParaDocumento.ciudad;
         document.getElementById('pdf-fecha').innerText = `Bogotá D.C., ${fechaActual}`;
         document.getElementById('pdf-entidad').innerText = datosParaDocumento.asunto || "Entidad Correspondiente";
         document.getElementById('pdf-nombre').innerText = datosParaDocumento.nombre;
@@ -288,15 +285,13 @@ async function enviarAGenerarDocumento(datosParaDocumento) {
         document.getElementById('pdf-hechos').innerText = datosParaDocumento.hechos;
         document.getElementById('pdf-peticiones').innerText = datosParaDocumento.peticiones;
         document.getElementById('pdf-correo').innerText = datosParaDocumento.correo;
-        
-        // Firma
         document.getElementById('pdf-firma-nombre').innerText = datosParaDocumento.nombre;
         document.getElementById('pdf-firma-id').innerText = `C.C. ${datosParaDocumento.identificacion}`;
 
-        // 4. Mostrar la plantilla temporalmente para que el motor visual la lea
+        // 2. Mostrar la plantilla momentáneamente en el DOM para poder escanearla
         plantilla.style.display = 'block';
 
-        // 5. Configurar opciones del PDF
+        // 3. Configuración para la descarga del archivo PDF
         const opciones = {
             margin: 15,
             filename: `Derecho_de_Peticion_${datosParaDocumento.nombre.replace(/\s+/g, '_')}.pdf`,
@@ -305,56 +300,73 @@ async function enviarAGenerarDocumento(datosParaDocumento) {
             jsPDF: { unit: 'mm', format: 'letter', orientation: 'portrait' }
         };
 
-        // 6. 🕒 ESPERA DE SEGURIDAD (150ms) para garantizar que el navegador dibuje los datos antes de exportar
-                setTimeout(() => {
-                    generadorPdf().set(opciones).from(plantilla).toPdf().output('datauristring').then(function (pdfBase64) {
-                        
-                        // Ocultar plantilla nuevamente ahora que la "foto" ya fue tomada
-                        plantilla.style.display = 'none';
-        
-                        // 7. Construir tarjeta de previsualización y descarga en el chat
-                        const tarjetaHTML = `
-                            <div style="text-align: center; margin-top: 10px; font-family: sans-serif;">
-                                <h4 style="color: #2e7d32; margin-bottom: 10px;">¡Documento Generado Exitosamente!</h4>
-                                <p style="font-size: 13px; color: #555; margin-bottom: 15px;">Hemos procesado tu Derecho de Petición de forma 100% local y segura.</p>
-                                
-                                <div style="box-shadow: 0 4px 12px rgba(0,0,0,0.15); border: 1px solid #ccc; border-radius: 8px; display: inline-block; padding: 5px; background: white; margin-bottom: 15px; max-width: 100%;">
-                                    <iframe src="${pdfBase64}#toolbar=0&navpanes=0" style="width: 320px; height: 400px; border: none; border-radius: 4px; display: block;"></iframe>
-                                </div>
-                                
-                                <br>
-                                
-                                <button id="btn-descarga-local-pdf" style="cursor: pointer; background-color: #1a73e8; color: white; padding: 12px 24px; border: none; border-radius: 4px; font-weight: bold; font-size: 14px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-                                    📥 Descargar PDF Creado
-                                </button>
-                            </div>
-                        `;
-        
-                        appendHTMLMessage('ia', tarjetaHTML);
-        
-                        // Enlazar evento de descarga local
-                        const btnDescarga = document.getElementById('btn-descarga-local-pdf');
-                        if (btnDescarga) {
-                            btnDescarga.onclick = function() {
-                                plantilla.style.display = 'block';
-                                setTimeout(() => {
-                                    generadorPdf().set(opciones).from(plantilla).save().then(() => {
-                                        plantilla.style.display = 'none';
-                                    });
-                                }, 50);
-                            };
-                        }
-                        
-                        // Reactivar inputs del chat
-                        userInput.disabled = false;
-                        btnEnviarChat.disabled = false;
-                        userInput.focus();
-                    });
-                }, 150); // Fin del timeout de 150ms
+        // 4. 🕒 Espera de seguridad de 150ms para asegurar renderizado de textos
+        setTimeout(() => {
+            
+            // APROVECHAMOS TU CANVAS LATERAL AQUÍ:
+            const canvasDestino = document.getElementById('canvasDocumento');
+            const placeholder = document.getElementById('placeholder');
+
+            if (canvasDestino) {
+                // Usamos el motor de html2canvas integrado para "fotografiar" la plantilla directamente en tu canvas
+                html2canvas(plantilla, { scale: 1.5, useCORS: true }).then(canvasGenerado => {
+                    // Ocultamos el texto de espera provisional
+                    if (placeholder) placeholder.style.display = 'none';
+                    
+                    // Ajustamos el canvas de tu HTML para que reciba la imagen del documento
+                    canvasDestino.width = canvasGenerado.width;
+                    canvasDestino.height = canvasGenerado.height;
+                    canvasDestino.style.display = 'block';
+                    canvasDestino.style.width = '100%'; // Se adapta al ancho de la columna lateral
+                    
+                    // Copiamos el dibujo al canvas visible
+                    const ctx = canvasDestino.getContext('2d');
+                    ctx.drawImage(canvasGenerado, 0, 0);
+                });
+            }
+
+            // 5. Generamos el archivo de descarga en memoria sin meter iframes molestos en el chat
+            generadorPdf().set(opciones).from(plantilla).toPdf().output('datauristring').then(function (pdfBase64) {
+                // Ocultamos la plantilla base
+                plantilla.style.display = 'none';
+
+                // Mandamos un mensaje limpio al chat con el botón de acción
+                const tarjetaHTML = `
+                    <div style="margin-top: 10px; font-family: sans-serif;">
+                        <p style="color: #2e7d32; font-weight: bold; margin-bottom: 5px;">¡Listo! El borrador oficial ya está visible en tu panel derecho.</p>
+                        <p style="font-size: 13px; color: #555; margin-bottom: 12px;">Por favor, revísalo detalladamente antes de guardarlo.</p>
+                        <button id="btn-descarga-local-pdf" style="cursor: pointer; background-color: #2e7d32; color: white; padding: 10px 20px; border: none; border-radius: 4px; font-weight: bold; font-size: 14px; box-shadow: 0 2px 4px rgba(0,0,0,0.15);">
+                            📥 Descargar Derecho de Petición (PDF)
+                        </button>
+                    </div>
+                `;
+
+                appendHTMLMessage('ia', tarjetaHTML);
+
+                // Asignamos la acción de descarga física al botón del chat
+                const btnDescarga = document.getElementById('btn-descarga-local-pdf');
+                if (btnDescarga) {
+                    btnDescarga.onclick = function() {
+                        plantilla.style.display = 'block';
+                        setTimeout(() => {
+                            generadorPdf().set(opciones).from(plantilla).save().then(() => {
+                                plantilla.style.display = 'none';
+                            });
+                        }, 50);
+                    };
+                }
                 
+                // Habilitamos el chat de nuevo por si requiere hacer ajustes
+                userInput.disabled = false;
+                btnEnviarChat.disabled = false;
+                userInput.focus();
+            });
+
+        }, 150);
+
     } catch (error) {
-        console.error("Error al generar PDF:", error);
-        appendMessage('ia', "❌ Ocurrió un error al procesar el PDF de manera local: " + error.message);
+        console.error("Error al pintar previsualización:", error);
+        appendMessage('ia', "❌ Hubo un inconveniente visual al actualizar el panel: " + error.message);
         const plantilla = document.getElementById('plantilla-peticion');
         if (plantilla) plantilla.style.display = 'none';
         
